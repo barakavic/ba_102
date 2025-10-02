@@ -1,5 +1,13 @@
 package com.example.budgeting_app.repository;
 
-public class BudgetCategoryRepository {
+import com.example.budgeting_app.entity.BudgetCategory;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+
+public interface BudgetCategoryRepository extends JpaRepository<BudgetCategory, Long>{
+
+    BudgetCategory findByName(String name);
+    
     
 }
