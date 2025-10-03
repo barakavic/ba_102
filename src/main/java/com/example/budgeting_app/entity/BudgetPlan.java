@@ -6,10 +6,13 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -26,6 +29,9 @@ public class BudgetPlan {
     private LocalDate startDate;
 
     private LocalDate endDate;
+
+    @Enumerated(EnumType.STRING)
+    private PlanStatus status;
 
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL)
     private List<Transaction> transactions = new ArrayList<>();
@@ -44,6 +50,21 @@ public class BudgetPlan {
 
     public List<Transaction> getTransactions(){return transactions;}
     public void setTransactions(List<Transaction> transactions){this.transactions=transactions;}
+
+    public PlanStatus getStatus(){return status;}
+    public void setStatus(PlanStatus status){this.status = status;}
+
+    // Ensures the status is set to active by default
+    @PrePersist
+    public void prePersist(){
+        if (status == null){
+            status = PlanStatus.ACTIVE;
+        }
+    }
+
+
+
+    
 
 
   
