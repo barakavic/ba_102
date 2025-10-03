@@ -8,6 +8,7 @@ import com.example.budgeting_app.entity.Transaction;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.time.LocalDateTime;
 
 
@@ -33,7 +34,11 @@ public class TransactionService {
 
     }
 
-    public List<Transaction> geTransactionsByPlan(Long planId){
+    public Transaction saveTransaction(Transaction transaction){
+        return transactionRepository.save(transaction);
+    }
+
+    public List<Transaction> getTransactionsByPlan(Long planId){
         return transactionRepository.findByPlanId(planId);
 
     }
@@ -46,6 +51,11 @@ public class TransactionService {
 
     public List<Transaction> getAllTransactions(){
         return transactionRepository.findAll();
+    }
+
+    public Optional<Transaction> getTransactionById(Long id){
+
+        return transactionRepository.findById(id);
     }
 
 

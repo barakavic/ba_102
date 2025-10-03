@@ -26,6 +26,10 @@ public class BudgetCategoryService {
 
     }
 
+    public BudgetCategory saveCategory(BudgetCategory category){
+        return categoryRepository.save(category);
+    }
+
     public List<BudgetCategory> getAllCategories(){
         return categoryRepository.findAll();
     }

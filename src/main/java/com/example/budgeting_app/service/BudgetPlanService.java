@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -25,12 +26,20 @@ public class BudgetPlanService {
         return planRepository.save(plan);
     }
 
+
+    // Save using full Object for JSON
+    public BudgetPlan savePlan(BudgetPlan plan){
+        return planRepository.save(plan);
+    }
+
+    // Fetching all
     public List<BudgetPlan> getAllPlans(){
         return planRepository.findAll();
     }
 
-    public BudgetPlan getPlan(Long id){
-        return planRepository.findById(id).orElse(null);
+    // Fetching By Id
+    public Optional<BudgetPlan> getPlanById(Long id){
+        return planRepository.findById(id);
     }
     
 }
