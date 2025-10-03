@@ -3,6 +3,8 @@ package com.example.budgeting_app.controller;
 import com.example.budgeting_app.service.TransactionService;
 import com.example.budgeting_app.entity.Transaction;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /* import java.math.BigDecimal;
@@ -20,29 +22,32 @@ public class TransactionController {
     }
 
     @PostMapping
-    public Transaction createTransaction(@RequestBody Transaction transaction) {
-        return transactionService.saveTransaction(transaction);
+    public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
+        Transaction save = transactionService.saveTransaction(transaction);
+        return ResponseEntity.status(HttpStatus.CREATED).body(save);
     }
 
     @GetMapping
-    public List<Transaction> getAllTransactions(){
-        return transactionService.getAllTransactions();
+    public ResponseEntity<List<Transaction>> getAllTransactions(){
+        return ResponseEntity.ok( transactionService.getAllTransactions());
 
     }
     
     @GetMapping("/by-id")
-    public Transaction geTransactionById(@RequestParam Long id){
-        return transactionService.getTransactionById(id).orElseThrow(() -> new RuntimeException("Transaction not found for id:"+ id));
+    public ResponseEntity<Transaction> geTransactionById(@RequestParam Long id){
+        return transactionService.getTransactionById(id)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping("/by-plan")
-    public List<Transaction> getTransactionsByPlan(@RequestParam Long planId){
-        return transactionService.getTransactionsByPlan(planId);
+    public ResponseEntity<List<Transaction>> getTransactionsByPlan(@RequestParam Long planId){
+        return ResponseEntity.ok(transactionService.getTransactionsByPlan(planId));
     }
 
     @GetMapping("/by-category")
-    public List<Transaction> geTransactionsByCategory(@RequestParam Long categoryId ){
-        return transactionService.geTransactionsByCategory(categoryId);
+    public ResponseEntity<List<Transaction>> getTransactionsByCategory(@RequestParam Long categoryId ){
+        return ResponseEntity.ok(transactionService.geTransactionsByCategory(categoryId));
     }
 
     

@@ -1,5 +1,6 @@
 package com.example.budgeting_app.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -24,7 +25,7 @@ public class BudgetCategory {
     private String name;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private List<Transaction> transactions;
+    private List<Transaction> transactions = new ArrayList<>();
 
 
 
