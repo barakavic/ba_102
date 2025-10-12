@@ -1,3 +1,7 @@
+import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
+import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
+import 'package:ba_102_fe/features/settings/presentation/settings_page.dart';
+import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
@@ -13,10 +17,10 @@ class MainNavigation extends ConsumerWidget{
     
     final pages  = const [
       DashboardPage(),
-      Placeholder(),
-      Placeholder(),
-      Placeholder(),
-      Placeholder()
+      CategoriesPage(),
+      TransactionsPage(),
+      PlansPage(),
+      SettingsPage()
       
     ];
 
