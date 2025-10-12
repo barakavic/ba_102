@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 
 @Entity
@@ -35,11 +36,29 @@ public class BudgetCategory {
     @JsonManagedReference("category-transaction")
     private List<Transaction> transactions = new ArrayList<>();
 
+    @Transient
+    public CategoryStatus categoryStatus;
+
     public Double getSpentAmount(){
         if(transactions == null || transactions.isEmpty()) return 0.0;
         return transactions.stream()
         .mapToDouble(Transaction::getAmount)
         .sum();
+    }
+
+    public CategoryStatus getStatus(){
+        if (limitAmount == null || limitAmount == 0)  {
+            return CategoryStatus.NORMAL;
+            
+        }
+
+        double ratio = spentAmount/limitAmount;
+
+        if (ratio>1) return CategoryStatus.OVERSPENT;
+        else if (ratio>0.8) return CategoryStatus.WARNING;
+        else return CategoryStatus.NORMAL;
+
+
     }
 
 
