@@ -2,6 +2,7 @@ package com.example.budgeting_app.service;
 
 import com.example.budgeting_app.repository.BudgetCategoryRepository;
 import com.example.budgeting_app.entity.BudgetCategory;
+import com.example.budgeting_app.exceptions.ResourceNotFoundException;
 
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -35,19 +36,34 @@ public class BudgetCategoryService {
     }
 
     public BudgetCategory getCategoryByName(String name){
-        return categoryRepository.findByName(name);
+        BudgetCategory category =  categoryRepository.findByName(name);
+        if(category == null){
+            throw new ResourceNotFoundException("Category not found with name" +name );
+
+        }
+
+        return category;
     }
 
     public BudgetCategory updateCategoryLimit(String name, Double limit){
         BudgetCategory category = categoryRepository.findByName(name);
 
         if(category == null){
-           throw new IllegalArgumentException("category with name"+name+"doesnt exist");
+
+            throw new ResourceNotFoundException("Can't set limit - category not found" + name);
+         
 
         }
 
         category.setLimitAmount(limit);
         return categoryRepository.save(category);
+    }
+
+    public void deleteCategory(Long id){
+        BudgetCategory category = categoryRepository.findById(id)
+        .orElseThrow(()-> new ResourceNotFoundException("Category not found with id" +id));
+
+        categoryRepository.delete(category);
     }
     
 
