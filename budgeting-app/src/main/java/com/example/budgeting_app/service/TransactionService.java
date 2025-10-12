@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.time.LocalDateTime;
 
 
 @Service
@@ -35,7 +34,9 @@ public class TransactionService {
         Transaction saved = transactionRepository.save(transaction);
 
         //Summation trigger logic that increments spent amount
-        category.setSpentAmount(category.getSpentAmount()+amount);
+
+        double currentSpent = category.getSpentAmount() !=null ? category.getSpentAmount() : 0.0;
+        category.setSpentAmount(currentSpent+amount);
         categoryRepository.save(category);
 
         return saved;
@@ -65,6 +66,31 @@ public class TransactionService {
     public Optional<Transaction> getTransactionById(Long id){
 
         return transactionRepository.findById(id);
+    }
+
+    public void deleteTransaction(Long id){
+        Optional<Transaction> optionalTransaction = transactionRepository.findById(id);
+
+        if(optionalTransaction.isPresent()){
+            Transaction transaction = optionalTransaction.get();
+            BudgetCategory category = transaction.getCategory();
+
+            if (category != null){
+                double currentSpent = category.getSpentAmount() != null ? category.getSpentAmount(): 0.0;
+                category.setSpentAmount(Math.max(0, currentSpent - transaction.getAmount()));
+                categoryRepository.save(category);
+
+            }
+
+
+            transactionRepository.delete(transaction);
+
+
+        }
+        else{
+            throw new RuntimeException("Transaction not found with id: "+ id);
+        }
+
     }
 
 

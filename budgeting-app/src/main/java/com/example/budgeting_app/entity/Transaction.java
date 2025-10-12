@@ -3,8 +3,6 @@ package com.example.budgeting_app.entity;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,7 +30,7 @@ public class Transaction {
 
     private LocalDateTime date;
 
-    // private LocalDateTime date = LocalDateTime.now();
+    
 
     // Changed to persistence @PrePersist to ensure date is set right before saving to DB
     @PrePersist
