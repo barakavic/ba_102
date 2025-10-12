@@ -13,7 +13,7 @@ class SettingsPage extends ConsumerWidget{
       ),
 
       body: Center(
-        child: Text("Categories go here",
+        child: Text("Settings go here",
         style: TextStyle(fontSize: 16.0),),
       ),
     );

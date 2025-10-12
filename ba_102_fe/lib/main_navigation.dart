@@ -43,6 +43,10 @@ class MainNavigation extends ConsumerWidget{
          NavigationDestination(icon: Icon(Icons.swap_horiz_outlined),
           selectedIcon: Icon(Icons.swap_horiz),
           label: "Transactions"),
+
+          NavigationDestination(icon: Icon(Icons.flag_outlined),
+          selectedIcon: Icon(Icons.flag), 
+          label: "Plans"),
           NavigationDestination(icon: Icon(Icons.settings_outlined),
           selectedIcon: Icon(Icons.settings), 
           label: "Settings"),
