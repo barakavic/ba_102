@@ -1,8 +1,10 @@
 package com.example.budgeting_app.service;
 
 import com.example.budgeting_app.repository.BudgetPlanRepository;
+import com.example.budgeting_app.entity.BudgetCategory;
 import com.example.budgeting_app.entity.BudgetPlan;
 import com.example.budgeting_app.entity.PlanStatus;
+import com.example.budgeting_app.exceptions.ResourceNotFoundException;
 
 import org.springframework.stereotype.Service;
 
@@ -55,6 +57,27 @@ public class BudgetPlanService {
             plan.setStatus(status);
             return planRepository.save(plan);
         });
+    }
+
+    public BudgetPlan addCategoryToPlan(Long planId, BudgetCategory category){
+        BudgetPlan plan = planRepository.findById(planId)
+        .orElseThrow(()->new ResourceNotFoundException("Plan not found with id " + planId));
+
+        category.setPlan(plan);
+        plan.getCategories().add(category);
+
+        return planRepository.save(plan);
+
+        
+    }
+
+    public double calculateTotalSpent(Long planId){
+        BudgetPlan plan = planRepository.findById(planId)
+        .orElseThrow(()-> new ResourceNotFoundException("Plan not found with id " + planId));
+
+        return plan.getCategories().stream()
+        .mapToDouble(BudgetCategory::getSpentAmount)
+        .sum();
     }
     
 }

@@ -1,5 +1,6 @@
 package com.example.budgeting_app.controller;
 
+import com.example.budgeting_app.entity.BudgetCategory;
 import com.example.budgeting_app.entity.BudgetPlan;
 import com.example.budgeting_app.entity.PlanStatus;
 import com.example.budgeting_app.service.BudgetPlanService;
@@ -75,6 +76,18 @@ public class BudgetPlanController {
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 
+    }
+
+    @PostMapping("/{planId}/category")
+    public ResponseEntity<BudgetPlan> addCategoryToplan(@PathVariable Long planId, @RequestBody BudgetCategory category){
+        BudgetPlan updatedPlan = budgetPlanService.addCategoryToPlan(planId, category);
+        return ResponseEntity.ok(updatedPlan);
+    }
+
+    @GetMapping("/{planId}/total-spent")
+    public ResponseEntity<Double> getTotalSpent(@PathVariable Long planId){
+        double totalSpent = budgetPlanService.calculateTotalSpent(planId);
+        return ResponseEntity.ok(totalSpent);
     }
 
     

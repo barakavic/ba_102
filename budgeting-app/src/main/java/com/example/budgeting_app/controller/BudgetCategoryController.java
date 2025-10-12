@@ -1,6 +1,7 @@
 package com.example.budgeting_app.controller;
 
 import com.example.budgeting_app.entity.BudgetCategory;
+import com.example.budgeting_app.entity.BudgetPlan;
 import com.example.budgeting_app.service.BudgetCategoryService;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,8 @@ import java.util.List;
 public class BudgetCategoryController {
     
     private final BudgetCategoryService categoryService;
+
+
 
     public BudgetCategoryController(BudgetCategoryService categoryService){
         this.categoryService = categoryService;
@@ -54,6 +57,7 @@ public class BudgetCategoryController {
         }
         return ResponseEntity.ok(category.getSpentAmount());
     }
+
     
     
 }
