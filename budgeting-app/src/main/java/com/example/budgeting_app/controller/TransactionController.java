@@ -47,7 +47,7 @@ public class TransactionController {
 
     @GetMapping("/by-category")
     public ResponseEntity<List<Transaction>> getTransactionsByCategory(@RequestParam Long categoryId ){
-        return ResponseEntity.ok(transactionService.geTransactionsByCategory(categoryId));
+        return ResponseEntity.ok(transactionService.getTransactionsByCategory(categoryId));
     }
 
     

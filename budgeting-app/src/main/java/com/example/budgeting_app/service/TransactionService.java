@@ -53,7 +53,7 @@ public class TransactionService {
 
     }
 
-    public List<Transaction> geTransactionsByCategory(Long categoryId){
+    public List<Transaction> getTransactionsByCategory(Long categoryId){
 
         return transactionRepository.findByCategoryId(categoryId);
 

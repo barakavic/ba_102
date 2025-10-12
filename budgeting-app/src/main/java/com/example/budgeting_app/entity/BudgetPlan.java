@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
@@ -13,11 +14,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
+@Data
 @Table(name = "budget_plans")
 public class BudgetPlan {
 
@@ -39,23 +43,17 @@ public class BudgetPlan {
     @JsonManagedReference("plan-transaction")
     private List<Transaction> transactions = new ArrayList<>();
 
-    public Long getId(){return id;}
-    public void setId(Long id){this.id = id;}
+    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL)
+    @JsonManagedReference("plan-category")
+    private List<BudgetCategory> categories = new ArrayList<>();
 
-    public String getName(){return name;}
-    public void setName(String name){this.name = name;}
 
-    public LocalDate getStartDate(){return startDate;}
-    public void setStartDate(LocalDate startDate){this.startDate=startDate;}
+    
 
-    public LocalDate getEndDate(){return endDate;}
-    public void setEndDate(LocalDate endDate){this.endDate=endDate;}
 
-    public List<Transaction> getTransactions(){return transactions;}
-    public void setTransactions(List<Transaction> transactions){this.transactions=transactions;}
+    
 
-    public PlanStatus getStatus(){return status;}
-    public void setStatus(PlanStatus status){this.status = status;}
+
 
     // Ensures the status is set to active by default
     @PrePersist
