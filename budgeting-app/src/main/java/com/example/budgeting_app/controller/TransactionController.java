@@ -58,7 +58,7 @@ public class TransactionController {
     }
     
     @GetMapping("/by-id")
-    public ResponseEntity<Transaction> geTransactionById(@RequestParam Long id){
+    public ResponseEntity<Transaction> getTransactionById(@RequestParam Long id){
         return transactionService.getTransactionById(id)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
