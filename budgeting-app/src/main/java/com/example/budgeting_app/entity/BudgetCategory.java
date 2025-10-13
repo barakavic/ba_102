@@ -46,9 +46,7 @@ public class BudgetCategory {
     @JsonBackReference("plan-category")
     private BudgetPlan plan;
 
-    @Transient
-    @Enumerated(EnumType.STRING)
-    public CategoryStatus categoryStatus;
+  
 
     public Double getSpentAmount(){
         if(transactions == null || transactions.isEmpty()) return 0.0;
