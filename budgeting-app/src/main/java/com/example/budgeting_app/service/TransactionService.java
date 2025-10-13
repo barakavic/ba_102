@@ -5,7 +5,10 @@ import com.example.budgeting_app.repository.TransactionRepository;
 import com.example.budgeting_app.entity.BudgetCategory;
 import com.example.budgeting_app.entity.BudgetPlan;
 import com.example.budgeting_app.entity.Transaction;
+import com.example.budgeting_app.exceptions.ResourceNotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,8 +18,10 @@ import java.util.Optional;
 @Service
 public class TransactionService {
 
-    private TransactionRepository transactionRepository;
-    private BudgetCategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
+    private final BudgetCategoryRepository categoryRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionService(TransactionRepository transactionRepository, BudgetCategoryRepository categoryRepository){
         this.transactionRepository = transactionRepository;
@@ -33,6 +38,7 @@ public class TransactionService {
 
         Transaction saved = transactionRepository.save(transaction);
 
+        
         //Summation trigger logic that increments spent amount
 
         double currentSpent = category.getSpentAmount() !=null ? category.getSpentAmount() : 0.0;
@@ -44,9 +50,6 @@ public class TransactionService {
 
     }
 
-    public Transaction saveTransaction(Transaction transaction){
-        return transactionRepository.save(transaction);
-    }
 
     public List<Transaction> getTransactionsByPlan(Long planId){
         return transactionRepository.findByPlanId(planId);
@@ -84,11 +87,13 @@ public class TransactionService {
 
 
             transactionRepository.delete(transaction);
+            logger.info("Transaction with id {} has been deleted", id);
 
 
         }
         else{
-            throw new RuntimeException("Transaction not found with id: "+ id);
+            logger.error("Transaction with id {} doesnt exist", id);
+            throw new ResourceNotFoundException("Transaction not found with id: "+ id);
         }
 
     }

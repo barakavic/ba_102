@@ -14,6 +14,9 @@ public class BudgetCategoryService {
 
     private final BudgetCategoryRepository categoryRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(BudgetCategoryService.class);
+
+
     public BudgetCategoryService(BudgetCategoryRepository categoryRepository){
         this.categoryRepository = categoryRepository;
     }
@@ -39,11 +42,26 @@ public class BudgetCategoryService {
     public BudgetCategory getCategoryByName(String name){
         BudgetCategory category =  categoryRepository.findByName(name);
         if(category == null){
+            logger.error("Category not found with name{}", name);
             throw new ResourceNotFoundException("Category not found with name" +name );
 
         }
 
         return category;
+    }
+
+    public BudgetCategory getCategoryById(Long id){
+        if (id == null){
+        logger.error("category with id {} not found", id);
+        throw new ResourceNotFoundException("Category not found for id: " +id);
+
+        }
+        return categoryRepository.findById(id)
+        .orElseThrow(()->{
+            logger.error("Category not found with id {}", id);
+            return new ResourceNotFoundException("Category not found with id: " +id);
+        });
+
     }
 
     public BudgetCategory updateCategoryLimit(String name, Double limit){
@@ -61,10 +79,16 @@ public class BudgetCategoryService {
     }
 
     public void deleteCategory(Long id){
+
+        logger.info("Attempting to delete category with id {}", id);
+
         BudgetCategory category = categoryRepository.findById(id)
-        .orElseThrow(()-> new ResourceNotFoundException("Category not found with id" +id));
+        .orElseThrow(()-> {
+            logger.error("Category not found with id {}", id);
+            return new ResourceNotFoundException("Category not found with id" +id);});
 
         categoryRepository.delete(category);
+        logger.info("Successfully deleted category with id {} ", id);
     }
     
 
