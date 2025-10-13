@@ -6,9 +6,12 @@ import com.example.budgeting_app.entity.PlanStatus;
 import com.example.budgeting_app.service.BudgetPlanService;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/plans")
 public class BudgetPlanController {
 
+    private static final Logger logger = LoggerFactory.getLogger(BudgetPlanController.class);
     private final BudgetPlanService budgetPlanService;
 
     public BudgetPlanController(BudgetPlanService budgetPlanService){
@@ -88,6 +92,14 @@ public class BudgetPlanController {
     public ResponseEntity<Double> getTotalSpent(@PathVariable Long planId){
         double totalSpent = budgetPlanService.calculateTotalSpent(planId);
         return ResponseEntity.ok(totalSpent);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deletePlan(Long planId){
+        budgetPlanService.deletePlan(planId);
+        logger.warn("Plan with ID {} deleted by user request", planId);
+        return ResponseEntity.noContent().build();
+    
     }
 
     

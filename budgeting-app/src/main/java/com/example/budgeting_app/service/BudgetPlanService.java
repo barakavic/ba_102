@@ -12,9 +12,15 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class BudgetPlanService {
+
+    private static final Logger logger = LoggerFactory.getLogger(BudgetPlanService.class);
+
     private BudgetPlanRepository planRepository;
 
     public BudgetPlanService (BudgetPlanRepository planRepository){
@@ -78,6 +84,17 @@ public class BudgetPlanService {
         return plan.getCategories().stream()
         .mapToDouble(BudgetCategory::getSpentAmount)
         .sum();
+    }
+
+    public void deletePlan(Long planId){
+        if (!planRepository.existsById(planId)){
+            logger.warn("Attempted to delete non existent plan with ID {}", planId);
+            throw new ResourceNotFoundException("Plan not found with id" +planId);
+            
+
+        }
+        planRepository.deleteById(planId);
+        logger.info("Succesfully deleted plan with ID{}", planId);
     }
     
 }
