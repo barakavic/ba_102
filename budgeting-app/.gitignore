@@ -35,3 +35,6 @@ build/
 
 # Environmetal variables 
 .env
+
+# Log files
+.log
