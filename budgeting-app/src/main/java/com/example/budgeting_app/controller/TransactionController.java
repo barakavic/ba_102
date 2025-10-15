@@ -45,7 +45,7 @@ public class TransactionController {
         
         Transaction saved = transactionService.addTransaction(plan, category, amount, description);
 
-        logger.info("Transaction created: planId{}, categoryId{}, amount{}", planId, category, amount);
+        logger.info("Transaction created: planId{}, categoryId{}, amount{}", planId, categoryId, amount);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         

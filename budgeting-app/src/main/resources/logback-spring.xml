@@ -14,7 +14,7 @@
      <!-- Rolling File Logging-->
       <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/budgeting-app.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimingBasedRollingPolicy">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
         <!-- New log file daily-->
          <fileNamePattern>logs/budgeting-app-%d{yyyy-MM-dd}.log</fileNamePattern>
         <!-- max 30 days--> 

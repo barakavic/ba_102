@@ -38,7 +38,7 @@ public class TransactionService {
 
         Transaction saved = transactionRepository.save(transaction);
 
-        
+
         //Summation trigger logic that increments spent amount
 
         double currentSpent = category.getSpentAmount() !=null ? category.getSpentAmount() : 0.0;
