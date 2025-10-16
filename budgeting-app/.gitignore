@@ -37,4 +37,4 @@ build/
 .env
 
 # Log files
-.log
+*.log
