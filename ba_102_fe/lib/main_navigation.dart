@@ -20,7 +20,7 @@ class MainNavigation extends ConsumerWidget{
       CategoriesPage(),
       TransactionsPage(),
       PlansPage(),
-      SettingsPage()
+      // SettingsPage()
       
     ];
 
@@ -42,14 +42,15 @@ class MainNavigation extends ConsumerWidget{
          label: "Categories"),
          NavigationDestination(icon: Icon(Icons.swap_horiz_outlined),
           selectedIcon: Icon(Icons.swap_horiz),
-          label: "Transactions"),
-
+          label: "Transactions"
+          ),
+        
           NavigationDestination(icon: Icon(Icons.flag_outlined),
           selectedIcon: Icon(Icons.flag), 
           label: "Plans"),
-          NavigationDestination(icon: Icon(Icons.settings_outlined),
+/*           NavigationDestination(icon: Icon(Icons.settings_outlined),
           selectedIcon: Icon(Icons.settings), 
-          label: "Settings"),
+          label: "Settings"), */
 
       ],
       
