@@ -1,6 +1,7 @@
+import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-
+import 'package:csv/csv.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
 
@@ -40,7 +41,9 @@ CREATE TABLE budget_plans (
     start_date TEXT,
     end_date TEXT,
     total_amount REAL,
-    status TEXT
+    status TEXT,
+    is_synced INTEGER DEFAULT 1,
+    last_modified TEXT
     )
     '''
 );
@@ -70,7 +73,58 @@ CREATE TABLE transactions (
     FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
 )
 ''');
+
+await _importCSV(db, 'assets/test_files/BudgetPlan.csv', 'budget_plans');
+await _importCSV(db, 'assets/test_files/BudgetCategory.csv', 'busget_category');
+await _importCSV(db, 'assets/test_files/transaction.csv', 'transactions');
 return db;
+  }
+
+
+  Future<void> _importCSV(Database db, String assetPath, String tableName) async{
+    final rawData = await rootBundle.loadString(assetPath);
+    final csvTable = const CsvToListConverter().convert(rawData, eol:'\n');
+
+  // Imports data fromthe csv skipping the header row
+  for(int i = 1; i<csvTable.length; i++){
+    final row = csvTable[i];
+    final values = <String, dynamic>{};
+
+    switch(tableName){
+      case 'budget_plans':
+      values.addAll({
+        'name': row[1],
+        'start_date': row[2],
+        'end_date': row[3],
+        'total_amount': row[4],
+        'status': row[5]
+      });
+      break;
+      case 'budget_category':
+      values.addAll({
+        'name': row[1],
+        'limit_amount': row[2],
+        'spent_amount': row[3],
+        'status': row[4],
+        'plan_id': row[5]
+      });
+      break;
+
+      case 'transactions':
+      values.addAll({
+        'description': row[1],
+        'amount': row[2],
+        'date': row[3],
+        'category_id': row[4],
+        'plan_id':row[5]
+      });
+      break;
+
+    }
+
+    await db.insert(tableName, values);
+  }
+
   }
 }
 

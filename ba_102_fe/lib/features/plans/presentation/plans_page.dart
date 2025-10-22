@@ -1,12 +1,37 @@
+import 'package:ba_102_fe/data/local/database_helper.dart';
+import 'package:ba_102_fe/data/local/plan_ls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
 import 'package:ba_102_fe/data/api/planService.dart';
 import 'package:ba_102_fe/data/models/models.dart';
+import 'package:sqflite/sqlite_api.dart';
 
 final plansProvider = FutureProvider<List<Plan>>((ref) async {
-  return Planservice().fetchPlans();
+  try{
+    // try online first
+    final onlinePlans = await Planservice().fetchPlans();
+
+  // save to offline later
+    final db = await DatabaseHelper.instance.database;
+    final localService = PlanLs(db);
+    // await localService.deleteAllPlans();
+
+    for(var plan in onlinePlans){
+      await localService.insertPlan(plan);
+    }
+    return onlinePlans;
+  } catch(e){
+    // N/w fails rollback to sqlite
+    print('Fetching from local DB due to error: $e');
+    final db = await DatabaseHelper.instance.database;
+    final localService = await PlanLs(db);
+    final localPlans= await localService.getPlans();
+    return localPlans;
+    
+  }
+  
 });
 
 class PlansPage extends ConsumerWidget{
