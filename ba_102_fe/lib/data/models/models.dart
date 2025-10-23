@@ -44,6 +44,7 @@ class Category{
   final double limitAmount;
   final double spentAmount;
   final String status;
+  final int planId;
   final List<Transaction> transactions;
 
   Category({
@@ -52,16 +53,40 @@ class Category{
     required this.spentAmount,
     required this.name,
     required this.status,
+    required this.planId,
     required this.transactions,
     
   });
+
+  Category copyWith({
+  int? id,
+  String? name,
+  double? limitAmount,
+  double? spentAmount,
+  String? status,
+  int? planId,
+  List<Transaction>? transactions,
+}) {
+  return Category(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    limitAmount: limitAmount ?? this.limitAmount,
+    spentAmount: spentAmount ?? this.spentAmount,
+    status: status ?? this.status,
+    planId: planId ?? this.planId,
+    transactions: transactions ?? this.transactions,
+  );
+}
+
   // API deserializaton
   factory Category.fromJson(
     Map<String, dynamic> json
   ) => Category(id: json['id'],
    limitAmount: (json['limitAmount'] as num?)?.toDouble() ?? 0, 
   spentAmount: (json['spentAmount'] as num?)?.toDouble() ?? 0, 
-  name: json['name']?? '', status: json['status']?? 'NORMAL', 
+  name: json['name']?? '', 
+  status: json['status']?? 'NORMAL', 
+  planId: json['planId'],
   transactions: (json['transactions'] as List<dynamic>?)?.
   map((e)=>Transaction.
   fromJson(e)).toList()??[],
@@ -74,15 +99,20 @@ class Category{
     'limit_amount':limitAmount,
     'spent_amount': spentAmount,
     'status': status,
+    'planId': planId,
   };
 
   factory Category.fromMap(Map<String, dynamic> map) => Category(
-    id: map['id'], 
+    id: map['id'] != null ? map['id'] as int : 0, 
     limitAmount: (map['limitAmount'] as num?)?.toDouble() ?? 0.0, 
     spentAmount: (map['spentAmount'] as num?)?.toDouble() ?? 0.0, 
     name: map['name'] ?? '', 
-    status: map['status'] ?? 'NORMAL', transactions: const[],
+    status: map['status'] ?? 'NORMAL',
+    planId: map['planId'] != null ? map['plan_id'] as int: 0, 
+    transactions: const[],
     );
+
+    
  
 }
 

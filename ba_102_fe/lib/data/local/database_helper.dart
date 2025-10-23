@@ -24,10 +24,14 @@ class DatabaseHelper {
     final db = await openDatabase(
       path,
       version: 1,
+      
+    
+
+    onConfigure: (db) async{
+      await db.execute('PRAGMA foreign_keys = ON;');
+      },
       onCreate: _createDB,
     );
-
-    await db.execute('PRAGMA foreign_keys = ON;');
 
     return db;
   }
@@ -93,6 +97,7 @@ return db;
     switch(tableName){
       case 'budget_plans':
       values.addAll({
+        'id': row[0],
         'name': row[1],
         'start_date': row[2],
         'end_date': row[3],
@@ -102,6 +107,7 @@ return db;
       break;
       case 'budget_category':
       values.addAll({
+        'id': row[0],
         'name': row[1],
         'limit_amount': row[2],
         'spent_amount': row[3],
@@ -112,6 +118,7 @@ return db;
 
       case 'transactions':
       values.addAll({
+        'id': row[0],
         'description': row[1],
         'amount': row[2],
         'date': row[3],
