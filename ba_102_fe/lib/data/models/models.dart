@@ -34,6 +34,8 @@ class Transaction{
   amount: (map['amount']as num ?)?.toDouble() ?? 0.0, 
   description: map['description'] ?? '', 
   date: DateTime.parse(map['date']));
+
+  
 }
 
 class Category{

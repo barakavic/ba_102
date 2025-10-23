@@ -18,6 +18,6 @@ class PlanLs {
   }
 
   Future<void> deleteAllPlans() async{
-    await db.delete('plans');
+    await db.delete('budget_plans');
   }
 }
