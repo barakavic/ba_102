@@ -75,7 +75,7 @@ CREATE TABLE transactions (
 ''');
 
 await _importCSV(db, 'assets/test_files/BudgetPlan.csv', 'budget_plans');
-await _importCSV(db, 'assets/test_files/BudgetCategory.csv', 'busget_category');
+await _importCSV(db, 'assets/test_files/BudgetCategory.csv', 'budget_category');
 await _importCSV(db, 'assets/test_files/transaction.csv', 'transactions');
 return db;
   }
