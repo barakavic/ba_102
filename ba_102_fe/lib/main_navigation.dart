@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
 
+const Color primaryColor = Color(0xFF4B0082);
+
 final navIndexProvider = StateProvider<int>((ref) => 0);
 
 class MainNavigation extends ConsumerWidget{
@@ -17,12 +19,18 @@ class MainNavigation extends ConsumerWidget{
     
     final pages  = const [
       DashboardPage(),
-      CategoriesPage(),
+      // CategoriesPage(),
       TransactionsPage(),
-      PlansPage(),
-      // SettingsPage()
+      // PlansPage(),
+      SettingsPage()
       
     ];
+
+    void selectDestination(int index){
+      ref.read(navIndexProvider.notifier).state = index;
+    }
+
+    
 
     return Scaffold(
       body: IndexedStack(
@@ -30,33 +38,54 @@ class MainNavigation extends ConsumerWidget{
         children: pages,
 
       ),
-      bottomNavigationBar: NavigationBar(selectedIndex: currentIndex,
-      onDestinationSelected: (index) => 
-      ref.read(navIndexProvider.notifier).state = index,
-      destinations: const[
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined),
-        selectedIcon: Icon(Icons.dashboard),
-         label: "Dashboard"),
-         NavigationDestination(icon: Icon(Icons.category_outlined), 
-         selectedIcon: Icon(Icons.category) , 
-         label: "Categories"),
-         NavigationDestination(icon: Icon(Icons.swap_horiz_outlined),
-          selectedIcon: Icon(Icons.swap_horiz),
-          label: "Transactions"
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){
+          selectDestination(1);
+        },
+        shape: const CircleBorder(),
+        backgroundColor: primaryColor,
+        elevation: 4.0,
+        child: const Icon(
+          Icons.swap_horiz_rounded, 
+          color: Colors.white, 
+          size: 30,
           ),
-        
-          NavigationDestination(icon: Icon(Icons.flag_outlined),
-          selectedIcon: Icon(Icons.flag), 
-          label: "Plans"),
-/*           NavigationDestination(icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings), 
-          label: "Settings"), */
+          
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: primaryColor,
+        shape: const CircularNotchedRectangle(),
+        height: 60,
+        padding: EdgeInsets.zero,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            IconButton(onPressed: ()=> selectDestination(0), 
+            icon: Icon(
+              currentIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+            
+            
+            ),
+            const SizedBox(width: 40,),
 
-      ],
-      
+            IconButton(
+              onPressed: ()=>selectDestination(2), 
+              icon: Icon(
+                currentIndex == 2 ? Icons.person_rounded : Icons.person_outline_outlined,
+                color: Colors.white,
+                size: 30,
+              ))
+          ],
+        ),
+      )
 
       
-      ),
+      
       
       
     

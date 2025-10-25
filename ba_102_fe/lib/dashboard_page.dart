@@ -1,3 +1,4 @@
+import 'package:ba_102_fe/features/dashboard/presentation/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,13 +9,14 @@ class DashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
-        centerTitle: true,
+        title: const Text('Total Budget'),
+          actions: [
+            IconButton(onPressed: (){}, 
+            icon: const Icon(Icons.notifications_none_outlined, color: Colors.black,))
+          ],
+          automaticallyImplyLeading: false,
       ),
-      body: const Center(
-        child: Text(' Dashboard coming soon! ',
-        style: TextStyle(fontSize: 18.0),),
-      ),
+      body: const HomeScreen(),
     );
   }
 }
