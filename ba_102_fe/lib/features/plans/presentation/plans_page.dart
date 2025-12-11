@@ -93,6 +93,13 @@ class PlansPage extends ConsumerWidget{
     
 
     
+    
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Implement add plan functionality
+        },
+        child: const Icon(Icons.add),
+      ),
    );
     // throw UnimplementedError();
   }

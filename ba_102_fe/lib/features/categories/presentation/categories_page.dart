@@ -117,6 +117,13 @@ class CategoriesPage extends ConsumerWidget{
 
  
 
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Implement add category functionality
+        },
+        backgroundColor: const Color(0xFF4B0082),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
     
   }
