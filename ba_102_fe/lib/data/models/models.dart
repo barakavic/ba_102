@@ -98,16 +98,16 @@ class Category{
     'limit_amount':limitAmount,
     'spent_amount': spentAmount,
     'status': status,
-    'planId': planId,
+    'plan_id': planId,
   };
 
   factory Category.fromMap(Map<String, dynamic> map) => Category(
-    id: map['id'] != null ? map['id'] as int : 0, 
-    limitAmount: (map['limitAmount'] as num?)?.toDouble() ?? 0.0, 
-    spentAmount: (map['spentAmount'] as num?)?.toDouble() ?? 0.0, 
+    id: map['id'] as int, 
+    limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0, 
+    spentAmount: (map['spent_amount'] as num?)?.toDouble() ?? 0.0, 
     name: map['name'] ?? '', 
     status: map['status'] ?? 'NORMAL',
-    planId: map['planId'] != null ? map['plan_id'] as int: 0, 
+    planId: map['plan_id']  as int, 
     transactions: const[],
     );
 
@@ -163,7 +163,7 @@ factory Plan.fromJson(Map<String, dynamic> json) =>Plan(
 
 
   Map<String, dynamic> toMap() =>{
-    'id': id,
+    if (id != 0 ) 'id': id,
     'name': name,
     'start_date':startDate.toIso8601String(),
     'end_date':endDate.toIso8601String(),

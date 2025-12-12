@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       
     
 
@@ -31,10 +31,48 @@ class DatabaseHelper {
       await db.execute('PRAGMA foreign_keys = ON;');
       },
       onCreate: _createDB,
+      onUpgrade:  _upgradeDB
     );
 
     return db;
   }
+
+Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+  if (oldVersion < 2) {
+    // 1. Create new table WITHOUT total_amount
+    await db.execute('PRAGMA foreign_keys = OFF;');
+
+
+    await db.execute('''
+      CREATE TABLE budget_plans_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        start_date TEXT,
+        end_date TEXT,
+        status TEXT,
+        is_synced INTEGER DEFAULT 1,
+        last_modified TEXT
+      );
+    ''');
+
+    // 2. Copy old data into new table
+    await db.execute('''
+      INSERT INTO budget_plans_new (id, name, start_date, end_date, status, is_synced, last_modified)
+      SELECT id, name, start_date, end_date, status, is_synced, last_modified
+      FROM budget_plans;
+    ''');
+
+    // 3. Drop old table
+    await db.execute('DROP TABLE budget_plans;');
+
+    // 4. Rename new table
+    await db.execute('ALTER TABLE budget_plans_new RENAME TO budget_plans;');
+  }
+
+  await db.execute('PRAGMA foreign_keys= ON;');
+}
+
+
 
   Future<Database> _createDB(Database db, int version) async{
     await db.execute('''
@@ -43,8 +81,7 @@ CREATE TABLE budget_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     start_date TEXT,
-    end_date TEXT,
-    total_amount REAL,
+    end_date TEXT,    
     status TEXT,
     is_synced INTEGER DEFAULT 1,
     last_modified TEXT
@@ -101,7 +138,6 @@ return db;
         'name': row[1],
         'start_date': row[2],
         'end_date': row[3],
-        'total_amount': row[4],
         'status': row[5]
       });
       break;

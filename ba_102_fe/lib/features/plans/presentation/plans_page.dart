@@ -1,5 +1,6 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/plan_ls.dart';
+import 'package:ba_102_fe/features/plans/presentation/plans_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,16 +11,17 @@ import 'package:ba_102_fe/data/models/models.dart';
 import 'package:sqflite/sqlite_api.dart';
 
 final plansProvider = FutureProvider<List<Plan>>((ref) async {
-  try{
+  // try{
     // try online first
-    final onlinePlans = await Planservice().fetchPlans();
+    // final onlinePlans = await Planservice().fetchPlans();
 
   // save to offline later
     final db = await DatabaseHelper.instance.database;
-    final localService = PlanLs(db);
+    return PlanLs(db).getPlans();
+    // final localService = PlanLs(db);
     // await localService.deleteAllPlans();
 
-    for(var plan in onlinePlans){
+    /* for(var plan in onlinePlans){
       await localService.insertPlan(plan);
     }
     return onlinePlans;
@@ -31,7 +33,7 @@ final plansProvider = FutureProvider<List<Plan>>((ref) async {
     final localPlans= await localService.getPlans();
     return localPlans;
     
-  }
+  } */
   
 });
 
@@ -92,6 +94,9 @@ class PlansPage extends ConsumerWidget{
     
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_)=> const PlansFormPage(),
+          ),
+          );
         },
         child: const Icon(Icons.add),
       ),
