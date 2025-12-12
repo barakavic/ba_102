@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.example.budgeting_app.entity.BudgetCategory;
 import com.example.budgeting_app.repository.BudgetCategoryRepository;
+import com.example.budgeting_app.repository.BudgetPlanRepository;
 import com.example.budgeting_app.service.BudgetCategoryService;
 
 public class BudgetCategoryServiceTest {
@@ -20,25 +21,24 @@ public class BudgetCategoryServiceTest {
     private BudgetCategoryService categoryService;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         categoryRepository = mock(BudgetCategoryRepository.class);
-        categoryService = new BudgetCategoryService(categoryRepository);
+        BudgetPlanRepository planRepository = mock(com.example.budgeting_app.repository.BudgetPlanRepository.class);
+        categoryService = new BudgetCategoryService(categoryRepository, planRepository);
 
     }
 
     @Test
-    void testCreateCategory(){
+    void testCreateCategory() {
 
         BudgetCategory category = new BudgetCategory();
         category.setName("Food");
         when(categoryRepository.save(any(BudgetCategory.class))).thenReturn(category);
-
 
         BudgetCategory result = categoryService.createCategory("Food");
 
         assertEquals("Food", result.getName());
         verify(categoryRepository, times(1)).save(any(BudgetCategory.class));
     }
-    
-    
+
 }

@@ -48,11 +48,6 @@ class CategoriesPage extends ConsumerWidget{
 
     final categoriesAsync = ref.watch(CategriesProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Categories"),
-        centerTitle: true,
-      ),
-
       body: categoriesAsync.when(
         data: (categories){
           if (categories.isEmpty){
@@ -121,8 +116,7 @@ class CategoriesPage extends ConsumerWidget{
         onPressed: () {
           // TODO: Implement add category functionality
         },
-        backgroundColor: const Color(0xFF4B0082),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add),
       ),
     );
     

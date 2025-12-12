@@ -1,6 +1,7 @@
 package com.example.budgeting_app.service;
 
 import com.example.budgeting_app.repository.BudgetCategoryRepository;
+import com.example.budgeting_app.repository.BudgetPlanRepository;
 import com.example.budgeting_app.entity.BudgetCategory;
 import com.example.budgeting_app.exceptions.ResourceNotFoundException;
 
@@ -16,61 +17,67 @@ public class BudgetCategoryService {
 
     private static final Logger logger = LoggerFactory.getLogger(BudgetCategoryService.class);
 
+    private final BudgetPlanRepository planRepository;
 
-    public BudgetCategoryService(BudgetCategoryRepository categoryRepository){
+    public BudgetCategoryService(BudgetCategoryRepository categoryRepository, BudgetPlanRepository planRepository) {
         this.categoryRepository = categoryRepository;
+        this.planRepository = planRepository;
     }
 
-    public BudgetCategory createCategory(String name){
+    public BudgetCategory createCategory(String name) {
         BudgetCategory category = new BudgetCategory();
         category.setName(name);
         return categoryRepository.save(category);
-
-
-
-
     }
 
-    public BudgetCategory saveCategory(BudgetCategory category){
+    public BudgetCategory createCategoryWithPlan(BudgetCategory category, Long planId) {
+        if (planId != null) {
+            com.example.budgeting_app.entity.BudgetPlan plan = planRepository.findById(planId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Plan not found with id: " + planId));
+            category.setPlan(plan);
+        }
         return categoryRepository.save(category);
     }
 
-    public List<BudgetCategory> getAllCategories(){
+    public BudgetCategory saveCategory(BudgetCategory category) {
+        return categoryRepository.save(category);
+    }
+
+    public List<BudgetCategory> getAllCategories() {
         return categoryRepository.findAll();
     }
 
-    public BudgetCategory getCategoryByName(String name){
-        BudgetCategory category =  categoryRepository.findByName(name);
-        if(category == null){
+    public BudgetCategory getCategoryByName(String name) {
+        BudgetCategory category = categoryRepository.findByName(name);
+        if (category == null) {
             logger.error("Category not found with name{}", name);
-            throw new ResourceNotFoundException("Category not found with name" +name );
+            throw new ResourceNotFoundException("Category not found with name" + name);
 
         }
 
         return category;
     }
 
-    public BudgetCategory getCategoryById(Long id){
-        if (id == null){
-        logger.error("category with id {} not found", id);
-        throw new ResourceNotFoundException("Category not found for id: " +id);
+    public BudgetCategory getCategoryById(Long id) {
+        if (id == null) {
+            logger.error("category with id {} not found", id);
+            throw new ResourceNotFoundException("Category not found for id: " + id);
 
         }
         return categoryRepository.findById(id)
-        .orElseThrow(()->{
-            logger.error("Category not found with id {}", id);
-            return new ResourceNotFoundException("Category not found with id: " +id);
-        });
+                .orElseThrow(() -> {
+                    logger.error("Category not found with id {}", id);
+                    return new ResourceNotFoundException("Category not found with id: " + id);
+                });
 
     }
 
-    public BudgetCategory updateCategoryLimit(String name, Double limit){
+    public BudgetCategory updateCategoryLimit(String name, Double limit) {
         BudgetCategory category = categoryRepository.findByName(name);
 
-        if(category == null){
+        if (category == null) {
 
             throw new ResourceNotFoundException("Can't set limit - category not found" + name);
-         
 
         }
 
@@ -78,22 +85,18 @@ public class BudgetCategoryService {
         return categoryRepository.save(category);
     }
 
-    public void deleteCategory(Long id){
+    public void deleteCategory(Long id) {
 
         logger.info("Attempting to delete category with id {}", id);
 
         BudgetCategory category = categoryRepository.findById(id)
-        .orElseThrow(()-> {
-            logger.error("Category not found with id {}", id);
-            return new ResourceNotFoundException("Category not found with id" +id);});
+                .orElseThrow(() -> {
+                    logger.error("Category not found with id {}", id);
+                    return new ResourceNotFoundException("Category not found with id" + id);
+                });
 
         categoryRepository.delete(category);
         logger.info("Successfully deleted category with id {} ", id);
     }
-    
 
-    
-
-    
-    
 }

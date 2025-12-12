@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
+// import 'package:ba_102_fe/features/plans/presentation/add_plan_page.dart';
 import 'package:ba_102_fe/data/api/planService.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:sqflite/sqlite_api.dart';
@@ -46,12 +47,7 @@ class PlansPage extends ConsumerWidget{
 
     final plansAsyncValue = ref.watch(plansProvider);
    return Scaffold(
-    appBar: AppBar(
-      title: const Text("Plans"),
-      centerTitle: true,
-    ),
-
-
+   
   body: plansAsyncValue.when(data: (plans) {
     if (plans.isEmpty){
       return const 
@@ -96,7 +92,6 @@ class PlansPage extends ConsumerWidget{
     
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Implement add plan functionality
         },
         child: const Icon(Icons.add),
       ),
