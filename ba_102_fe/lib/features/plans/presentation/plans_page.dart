@@ -6,9 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
 // import 'package:ba_102_fe/features/plans/presentation/add_plan_page.dart';
-import 'package:ba_102_fe/data/api/planService.dart';
 import 'package:ba_102_fe/data/models/models.dart';
-import 'package:sqflite/sqlite_api.dart';
 
 final plansProvider = FutureProvider<List<Plan>>((ref) async {
   // try{
