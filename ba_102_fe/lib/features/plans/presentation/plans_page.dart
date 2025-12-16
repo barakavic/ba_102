@@ -60,23 +60,39 @@ class PlansPage extends ConsumerWidget{
       itemCount: plans.length,
       itemBuilder: (context, index){
         final plan = plans[index];
-        return ExpansionTile(
-          title: Text(plan.name),
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+
+          child: ExpansionTile(
+          title: Text(plan.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600
+          ),
+          ),
           
-          subtitle: Text('Status: ${plan.status}'),
-          children: [
-            ...plan.categories.map((c)=> ListTile(
-              title: Text(c.name),
-              subtitle: Text('Spent: ${c.spentAmount} / ${c.limitAmount}'),
-              trailing: Text(c.status),
-              )),
-          ...plan.transactions.map((t)=> ListTile(
-            title: Text(t.description),
-            subtitle: Text('${t.amount} - ${t.date}'),
-          ))
-          ],
+          subtitle: Text(
+            '${plan.startDate.toLocal().toIso8601String().substring(0,10)} →  ${plan.endDate.toIso8601String().substring(0,10)}' 
+            ),
+
+            children: const[
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Tap to view category breakdown',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                
+                )
+            ],           
+
           
+        ),
         );
+
       },
     
     );

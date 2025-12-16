@@ -122,10 +122,7 @@ class Plan {
   final DateTime startDate;
   final DateTime endDate;
   final String status;
-  final bool isSynced;
-  final DateTime? lastModified;
-  final List<Category> categories;
-  final List<Transaction> transactions;
+  
 
 
 Plan({
@@ -134,11 +131,9 @@ Plan({
   required this.startDate,
   required this.endDate,
   required this.status,
-  this.isSynced = true,
-  this.lastModified,
-  required this.categories,
-  required this.transactions,
+  
 });
+
 // API Deserialization
 factory Plan.fromJson(Map<String, dynamic> json) =>Plan(
   id: json['id'], 
@@ -146,30 +141,20 @@ factory Plan.fromJson(Map<String, dynamic> json) =>Plan(
   startDate: (DateTime.parse(json['start_date'])), 
   endDate: (DateTime.parse(json['end_date'])), 
   status: json['status'] ?? 'ACTIVE', 
-  lastModified: json['last_modified'] != null 
-  ? DateTime.parse(json['last_modified']) : null,
-
-  categories: (json['categories'] as List<dynamic> ?)
-  ?.map((e) => Category.fromJson(e)).
-  toList() ?? [],
-  transactions: (json['transactions'] as List<dynamic>?)
-  ?.map((e) => Transaction
-  .fromJson(e))
-  .toList() ?? [],
+  
   );
   
 
   
 
-
+// SQLite serialization
   Map<String, dynamic> toMap() =>{
     if (id != 0 ) 'id': id,
     'name': name,
     'start_date':startDate.toIso8601String(),
     'end_date':endDate.toIso8601String(),
     'status': status,
-    'is_synced': isSynced ? 1 : 0,
-    'last_modified': (lastModified ?? DateTime.now()).toIso8601String()
+   
   };
 
   factory Plan.fromMap(Map<String,dynamic> map) => Plan(
@@ -178,10 +163,6 @@ factory Plan.fromJson(Map<String, dynamic> json) =>Plan(
   startDate: DateTime.parse(map['start_date']), 
   endDate: DateTime.parse(map['end_date']), 
   status: map['status'] ?? 'ACTIVE', 
-  isSynced: (map['is_synced' ] ?? 1) == 1,
-  lastModified: map['last_modified'] != null
-  ?DateTime.parse(map['last_modified']):null,
-  categories: const[],
-   transactions: const[],
+  
    );
 }

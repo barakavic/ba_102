@@ -57,8 +57,7 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
             startDate: start!, 
             endDate: end!, 
             status: "ACTIVE", 
-            categories: [], 
-            transactions: []);
+            );
 
             final savePlan = ref.read(addPlanProvider);
             await savePlan(plan);

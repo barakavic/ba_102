@@ -1,7 +1,7 @@
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:csv/csv.dart';
+// import 'package:csv/csv.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
 
@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 2,
+      version: 1,
       
     
 
@@ -31,47 +31,10 @@ class DatabaseHelper {
       await db.execute('PRAGMA foreign_keys = ON;');
       },
       onCreate: _createDB,
-      onUpgrade:  _upgradeDB
-    );
+      );
 
     return db;
   }
-
-Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
-  if (oldVersion < 2) {
-    // 1. Create new table WITHOUT total_amount
-    await db.execute('PRAGMA foreign_keys = OFF;');
-
-
-    await db.execute('''
-      CREATE TABLE budget_plans_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        start_date TEXT,
-        end_date TEXT,
-        status TEXT,
-        is_synced INTEGER DEFAULT 1,
-        last_modified TEXT
-      );
-    ''');
-
-    // 2. Copy old data into new table
-    await db.execute('''
-      INSERT INTO budget_plans_new (id, name, start_date, end_date, status, is_synced, last_modified)
-      SELECT id, name, start_date, end_date, status, is_synced, last_modified
-      FROM budget_plans;
-    ''');
-
-    // 3. Drop old table
-    await db.execute('DROP TABLE budget_plans;');
-
-    // 4. Rename new table
-    await db.execute('ALTER TABLE budget_plans_new RENAME TO budget_plans;');
-  }
-
-  await db.execute('PRAGMA foreign_keys= ON;');
-}
-
 
 
   Future<Database> _createDB(Database db, int version) async{
@@ -79,26 +42,19 @@ Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
 
 CREATE TABLE budget_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
+    name TEXT NOT NULL,
     start_date TEXT,
     end_date TEXT,    
-    status TEXT,
-    is_synced INTEGER DEFAULT 1,
-    last_modified TEXT
-    )
+    status TEXT
+   );
     '''
 );
 
  await db.execute('''
 CREATE TABLE budget_category (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    limit_amount REAL,
-    spent_amount REAL,
-    status TEXT,
-    plan_id INTEGER,
-    FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
-)
+    name TEXT NOT NULL
+    );
 
 ''');
 
@@ -106,23 +62,23 @@ await db.execute('''
 CREATE TABLE transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     description TEXT,
-    amount REAL,
-    date TEXT,
+    amount REAL NOT NULL,
+    date TEXT NOT NULL,
     category_id INTEGER,
     plan_id INTEGER,
     FOREIGN KEY (category_id) REFERENCES budget_category(id),
     FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
-)
+);
 ''');
 
-await _importCSV(db, 'assets/test_files/BudgetPlan.csv', 'budget_plans');
+/* await _importCSV(db, 'assets/test_files/BudgetPlan.csv', 'budget_plans');
 await _importCSV(db, 'assets/test_files/BudgetCategory.csv', 'budget_category');
-await _importCSV(db, 'assets/test_files/transaction.csv', 'transactions');
+await _importCSV(db, 'assets/test_files/transaction.csv', 'transactions'); */
 return db;
   }
 
 
-  Future<void> _importCSV(Database db, String assetPath, String tableName) async{
+  /* Future<void> _importCSV(Database db, String assetPath, String tableName) async{
     final rawData = await rootBundle.loadString(assetPath);
     final csvTable = const CsvToListConverter().convert(rawData, eol:'\n');
 
@@ -167,9 +123,9 @@ return db;
 
     await db.insert(tableName, values);
   }
-
+ */
   }
-}
+
 
 
 
