@@ -2,7 +2,7 @@
 import 'package:ba_102_fe/data/local/category_ls.dart';
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/models/models.dart';
-import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
+import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,17 +53,13 @@ class _CatFormPageState extends ConsumerState<CatFormPage>{
           final db = await DatabaseHelper.instance.database;
           final category = Category(
           id: 0, 
-          limitAmount: double.tryParse(limitCtrl.text) ?? 0, 
-          spentAmount: 0, 
           name: nameCtrl.text.trim(), 
-          status: "NORMAL", 
-          planId: widget.planId, 
           transactions: []
           );
 
           await CategoryLs(db).insertCategory(category);
 
-          ref.refresh(plansProvider);
+          ref.refresh(CategoriesProvider);
           Navigator.pop(context);
         }, 
         child: Text("Save Category"))

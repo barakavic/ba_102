@@ -1,11 +1,12 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
+import 'package:sqflite/sql.dart';
 
 class CategoryRepo {
   final dbHelper = DatabaseHelper.instance;
 
   Future<int> insertCategory(Map<String, dynamic> category) async{
     final db = await dbHelper.database;
-    return await db.insert('budget_category', category);
+    return await db.insert('budget_category', category, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getCategories() async {
@@ -20,7 +21,7 @@ class CategoryRepo {
       'budget_category',
       category,
       where: 'id = ?',
-      whereArgs: category['id'],
+      whereArgs: [category['id']],
       );
   }
 
@@ -28,7 +29,7 @@ class CategoryRepo {
     final db = await dbHelper.database;
     return await db.delete('budget_category',
     where: 'id = ?',
-    whereArgs: [id]
+    whereArgs: [id],
     );
   }
 

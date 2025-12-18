@@ -8,16 +8,19 @@ class CategoryLs {
     final List<Map<String, dynamic>> catMaps = await db.query('budget_category');
     List<Category> categories = [];
 
-    for (var catMap in catMaps){
-      final txMaps = await db.query('transactions',
-      where: 'category_id = ?',
-      whereArgs: [catMap['id']]
+    for (final catMap in catMaps){
+      final List<Map<String, dynamic>> txMaps = await db.query(
+        'transactions',
+        where: 'category_id = ?',
+        whereArgs: [catMap['id']],
+      );
+      
+      final transactions = txMaps.map((m) => Transaction.fromMap(m)).toList();
+
+      final category = Category.fromMap(catMap).copyWith(
+        transactions: transactions,
       );
 
-      final txs = txMaps.map((map) => Transaction.fromMap(map)).toList();
-
-      final category = Category.fromMap(catMap).copyWith(transactions: txs);
-      
       categories.add(category);
     }
 
@@ -28,7 +31,10 @@ class CategoryLs {
  }
 
  Future<void> insertCategory(Category category) async{
-  await db.insert('budget_category', category.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  await db.insert(
+    'budget_category', 
+    category.toMap(), 
+    conflictAlgorithm: ConflictAlgorithm.replace);
  }
 
  Future<void> deleteAllCategories() async{

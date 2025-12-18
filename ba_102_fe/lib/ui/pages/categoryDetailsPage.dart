@@ -8,7 +8,8 @@ class CategoryDetailsPage extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
+
+    final totalSpent = category.transactions.fold<double>(0.0, (sum, tx)=> sum+tx.amount);
 
     return Scaffold(
       appBar: AppBar(
@@ -21,27 +22,23 @@ class CategoryDetailsPage extends StatelessWidget{
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Limit: ${category.limitAmount ?? 'No Limit'}',
-            
-            ),
-            const SizedBox(
-              height: 8.0,
-            ),
-
-            Text(
-              'SpentAmount: ${category.spentAmount}',
-              style: const TextStyle(
-                fontSize: 16.0
-              ),
+            Text('Total spent: ${totalSpent.toStringAsFixed(2) }',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),            
             ),
 
             const SizedBox(
-              height: 8.0
+              height: 16.0,
             ),
 
-            Expanded(child: category.transactions.isEmpty ? 
+            Expanded(
+            child: category.transactions.isEmpty ? 
             const Center(
-              child: Text('No Transactions Yet'),
+              child: Text('No Transactions Yet',
+              style: TextStyle(color: Colors.grey),
+              ),
             )
             : ListView.builder(
               itemCount: category.transactions.length,
@@ -57,8 +54,14 @@ class CategoryDetailsPage extends StatelessWidget{
                 child: ListTile(
                   title: Text(tx.description),
                   subtitle: Text(
-                    'Date: ${tx.date} \n Amount: ${tx.amount}',
+                    'Date: ${tx.date.toIso8601String().substring(0,10)} }',
 
+                  ),
+                  trailing: Text(
+                    tx.amount.toStringAsFixed(2),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               );

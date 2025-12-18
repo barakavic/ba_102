@@ -6,8 +6,9 @@ import 'package:ba_102_fe/data/api/categoryService.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 
 import 'package:ba_102_fe/ui/pages/categoryDetailsPage.dart';
+import 'package:ba_102_fe/features/categories/presentation/cat_form_page.dart';
 
-final CategriesProvider = FutureProvider<List<Category>>((ref) async {
+final CategoriesProvider = FutureProvider<List<Category>>((ref) async {
   
   try{
     // try Online
@@ -46,7 +47,7 @@ class CategoriesPage extends ConsumerWidget{
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    final categoriesAsync = ref.watch(CategriesProvider);
+    final categoriesAsync = ref.watch(CategoriesProvider);
     return Scaffold(
       body: categoriesAsync.when(
         data: (categories){
@@ -113,9 +114,12 @@ class CategoriesPage extends ConsumerWidget{
  
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement add category functionality
-        },
+      onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CatFormPage(planId: 0)), // Replace 0 with actual planId if needed
+        );
+      },
         child: const Icon(Icons.add),
       ),
     );
