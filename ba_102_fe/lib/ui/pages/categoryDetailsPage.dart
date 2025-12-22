@@ -9,7 +9,7 @@ class CategoryDetailsPage extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
 
-    final totalSpent = category.transactions.fold<double>(0.0, (sum, tx)=> sum+tx.amount);
+    final totalSpent = category.transactions.fold<double>(0.0, (sum, tx)=> sum+tx.amount!);
 
     return Scaffold(
       appBar: AppBar(
@@ -52,13 +52,13 @@ class CategoryDetailsPage extends StatelessWidget{
                 ),
 
                 child: ListTile(
-                  title: Text(tx.description),
+                  title: Text(tx.description!),
                   subtitle: Text(
-                    'Date: ${tx.date.toIso8601String().substring(0,10)} }',
+                    'Date: ${tx.date?.toIso8601String().substring(0,10)} }',
 
                   ),
                   trailing: Text(
-                    tx.amount.toStringAsFixed(2),
+                    tx.amount!.toStringAsFixed(2),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                     ),

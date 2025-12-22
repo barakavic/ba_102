@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       
     
 
@@ -31,6 +31,7 @@ class DatabaseHelper {
       await db.execute('PRAGMA foreign_keys = ON;');
       },
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
       );
 
     return db;
@@ -66,6 +67,9 @@ CREATE TABLE transactions (
     date TEXT NOT NULL,
     category_id INTEGER,
     plan_id INTEGER,
+    mpesa_reference TEXT UNIQUE,
+    balance REAL,
+    real_sms_message TEXT,
     FOREIGN KEY (category_id) REFERENCES budget_category(id),
     FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
 );
@@ -75,6 +79,19 @@ CREATE TABLE transactions (
 await _importCSV(db, 'assets/test_files/BudgetCategory.csv', 'budget_category');
 await _importCSV(db, 'assets/test_files/transaction.csv', 'transactions'); */
 return db;
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async{
+    if (oldVersion < 2){
+      await db.execute('ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT "outbound"');
+      await db.execute('ALTER TABLE transactions ADD COLUMN vendor TEXT');
+      await db.execute('ALTER TABLE transactions ADD COLUMN mpesa_reference TEXT');
+      await db.execute('ALTER TABLE transactions ADD COLUMN balance REAL');
+      await db.execute('ALTER TABLE transaction ADD COLUMN raw_sms_message TEXT');
+
+      print('Database upgraded to version $newVersion');
+    }
+
   }
 
 
@@ -124,6 +141,11 @@ return db;
     await db.insert(tableName, values);
   }
  */
+
+Future <void> close() async {
+  final db = await instance.database;
+  db.close();
+}
   }
 
 

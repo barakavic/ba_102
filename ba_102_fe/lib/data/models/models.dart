@@ -1,16 +1,35 @@
 
 class Transaction{
-  final int id;
-  final double amount;
-  final String description;
-  final DateTime date;
+  final int? id;
+  final double? amount;
+  final String? description;
+  final DateTime? date;
+  final int? categoryId;
+  final int? planId;
+  final String type;
+  final String? vendor;
+  final String? mpesaReference;
+  final double? balance;
+  final String? rawSmsMessage;
+
 
   Transaction({
-    required this.id,
-    required this.amount,
-    required this.description,
-    required this.date,
+    this.id,
+    this.amount,
+    this.description,
+    this.date,
+    this.categoryId,
+    this.planId,
+    this.balance,
+    this.mpesaReference,
+    this.rawSmsMessage,
+    this.type = 'outbound',
+    this.vendor,
+
+
   });
+
+  
 
 // API deserialization
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
@@ -18,6 +37,14 @@ class Transaction{
   amount: (json['amount']as num?)?.toDouble() ?? 0.0, 
   description: json['description'] ?? '',
   date: DateTime.parse(json['date']),
+  categoryId: json['categoryId'],
+  planId: json['plan_id'],
+  balance: json['balance'] ?? 0,
+  rawSmsMessage: json['raw_sms_message'] as String?,
+  type: json['type'],
+  vendor: json['vendor'],
+  mpesaReference: json['mpesa_reference']
+
    );
 
   //  Local DB mapping
@@ -25,16 +52,59 @@ class Transaction{
     'id': id,
     'amount': amount,
     'description': description,
-    'date': date.toIso8601String(),
+    'date': date?.toIso8601String(),
+    'category_id': categoryId,
+    'plan_id': planId,
+    'type': type,
+    'vendor': vendor,
+    'mpesa_reference': mpesaReference,
+    'balance': balance,
+    'raw_sms_message': rawSmsMessage
   };
 
   factory Transaction.fromMap(Map<String, dynamic> map)=>Transaction(
   id: map['id'], 
   amount: (map['amount']as num ?)?.toDouble() ?? 0.0, 
   description: map['description'] ?? '', 
-  date: DateTime.parse(map['date']));
+  date: DateTime.parse(map['date']),
+  categoryId: map['category_id'] as int?,
+  planId: map['plan_id'] as int?,
+  type: map['type'] as String? ?? 'outbound',
+  vendor: map['vendor'] as String?,
+  mpesaReference: map['mpesa_reference'] as String?,
+  balance: map['balance'] as double?,
+  rawSmsMessage: map['raw_sms_message'] as String?,
+  );
 
-  
+  Transaction copyWith({
+    int? id,
+    String? description,
+    double? amount,
+    DateTime? date,
+    int? categoryId,
+    int? planId,
+    String? type,
+    String? vendor,
+    String? mpesaReference,
+    double? balance,
+    String? rawSmsMessage,
+
+
+  }){
+    return Transaction(
+    id: id??this.id, 
+    amount: amount ?? this.amount, 
+    description: description?? this.description, 
+    date: date?? this.date,
+    categoryId: categoryId ?? this.categoryId,
+    planId: planId ?? this.planId,
+    type: type ?? this.type,
+    vendor: vendor ?? this.vendor,
+    mpesaReference: mpesaReference ?? this.mpesaReference,
+    balance: balance ?? this.balance,
+    rawSmsMessage: rawSmsMessage ?? this.rawSmsMessage
+    );
+  }
 }
 
 class Category{
@@ -82,10 +152,6 @@ class Category{
     if (id !=0) 'id':id,
     'name':name,
     };
-
-
-    
- 
 }
 
 

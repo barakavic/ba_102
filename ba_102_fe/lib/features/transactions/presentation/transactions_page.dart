@@ -1,30 +1,36 @@
 // import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 
-import 'package:ba_102_fe/data/api/transaction_service.dart';
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
 import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
+import 'package:ba_102_fe/providers/sms_provider.dart';
+import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart';
 
 const Color priColor = Color(0xFF4B0082);
 
 final txProv = FutureProvider<List<Transaction>>((ref) async{
-  try{
-    // try online
+  
+ final db = await DatabaseHelper.instance.database;
+ final localService = TransactionsLs(db);
+ final localTx = await localService.getTransactions();
+ return localTx;
+  /* try{
+   /* // try online
     final onlineTx = await TransactionService().fetchTx();
 
-    // save to offline
-    final db = await DatabaseHelper.instance.database;
-    final localService = TransactionsLs(db);
-    
+ 
     for (var tx in onlineTx){
       await localService.insertTransaction(tx);
     }
-    return onlineTx;
+    return onlineTx;  */
+       // save to offline
+    final db = await DatabaseHelper.instance.database;
+    final localService = TransactionsLs(db);
+    
   }
   catch(e){
     // N/w fails rollback to sqlite
@@ -33,7 +39,8 @@ final txProv = FutureProvider<List<Transaction>>((ref) async{
     final localTx = await localService.getTransactions();
     return localTx;
 
-  }
+  } */
+
 });
 class TransactionsPage  extends ConsumerWidget{
   const TransactionsPage({super.key});
@@ -46,6 +53,16 @@ class TransactionsPage  extends ConsumerWidget{
   Widget build(BuildContext context, WidgetRef ref) {
 
     final txAsyncValue = ref.watch(txProv);
+    final smsState = ref.watch(smsProvider);
+
+
+    // Listen for new transactions and show the snackbar
+    ref.listen<SmsState>(smsProvider, (previous, next){
+      if (next.lastTransaction != null && next.lastTransaction != previous?.lastTransaction){
+        _showTransactionSnackbar(context, next.lastTransaction!);
+
+      }
+    });
 
     return DefaultTabController(
       length: 3, 
@@ -53,6 +70,60 @@ class TransactionsPage  extends ConsumerWidget{
         appBar: AppBar(
         title: const Text('Transaction'),
         centerTitle: true,
+        actions: [
+          Padding(padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Icon(smsState.isListening ? Icons.sms : Icons.sms_failed,
+              color: smsState.isListening ? Colors.green.shade400 : Colors.grey,
+              size: 20,
+              ),
+              if (smsState.transactionCount > 0)
+              Container(
+                margin: const EdgeInsets.only(left: 4.0),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color:  Colors.green,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${smsState.transactionCount}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+
+
+                  ),
+                ),
+              ),
+
+            ],
+          ),
+          ),
+          // In AppBar actions:
+
+// Test Message buttton
+IconButton(
+  icon: Icon(Icons.play_arrow),
+  onPressed: () {
+    final testMessage = "TLMIK1QOMY Confirmed. Ksh3.00 sent to SAFARICOM DATA BUNDLES for account SAFARICOM DATA BUNDLES on 22/12/25 at 7:52 PM. New M-PESA balance is Ksh922.28. Transaction cost, Ksh0.00.";
+    final parser = MpesaParserService();
+    final result = parser.parseMessage(testMessage, DateTime.now().millisecondsSinceEpoch);
+    
+    if (result != null) {
+      print("✅ Parse SUCCESS!");
+      print("Reference: ${result.reference}");
+      print("Amount: ${result.amount}");
+      print("Recipient: ${result.recipient}");
+      print("Balance ${result.balance}");
+      print("Type: ${result.type}");
+    } else {
+      print("❌ Parse FAILED");
+    }
+  },
+)
+        ],
       ),
       body: Column(
         children: <Widget>[
@@ -69,7 +140,9 @@ class TransactionsPage  extends ConsumerWidget{
           ],
           ),
           Expanded(child: TabBarView(children: [
-            TransactionDetailsView(ref: ref),
+            TransactionDetailsView(ref: ref,
+            txAsyncValue: txAsyncValue
+            ),
             CategoriesPage(),
             PlansPage()
             
@@ -84,6 +157,65 @@ class TransactionsPage  extends ConsumerWidget{
       );
       
     // throw UnimplementedError();
+  }
+
+  void _showTransactionSnackbar(BuildContext context, MpesaTransaction transaction){
+    String message;
+    Color color;
+    IconData icon;
+
+    switch(transaction.type){
+      case TransactionType.inbound:
+      message = 'Received KES amount ${transaction.amount.toStringAsFixed(2)}';
+      if (transaction.recipient != null ) message += 'to${transaction.recipient}';
+      color = Colors.green;
+      icon = Icons.arrow_downward;
+      break;
+      case TransactionType.outbound:
+      message = 'Sent KES ${transaction.amount.toStringAsFixed(2)}';
+      if (transaction.recipient != null) message += 'to ${transaction.recipient}';
+      color = Colors.red;
+      icon = Icons.arrow_upward;
+      break;
+      case TransactionType.withdrawal:
+      message = 'Withdrawn KES ${transaction.amount.toStringAsFixed(2)}';
+      color = Colors.orange.shade400;
+      icon = Icons.local_atm;
+      break;
+      case TransactionType.deposit:
+      message = 'Deposited KES ${transaction.amount.toStringAsFixed(2)}';
+      color = Colors.blue;
+      icon = Icons.account_balance;
+      break;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Row(children: [
+        Icon(icon, color: Colors.white, size: 20),
+        const SizedBox(
+          width: 8,
+        ),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Ref: ${transaction.reference}', style: const TextStyle(fontSize: 11),),
+          ],
+        ),),
+      ],
+      ),
+      backgroundColor: color,
+      action: SnackBarAction(
+      label: 'View', 
+      textColor: Colors.white,
+      onPressed: (){},
+      ),
+      duration: 
+       const Duration(seconds:  4),
+      ),
+      
+    );
   }
 
 
@@ -128,21 +260,24 @@ class TransactionsPage  extends ConsumerWidget{
 
 class TransactionDetailsView extends StatelessWidget{
   final WidgetRef ref;
-  const TransactionDetailsView({super.key, required this.ref});
+  final AsyncValue<List<Transaction>> txAsyncValue;
+  const TransactionDetailsView({
+    super.key, 
+    required this.ref,
+    required this.txAsyncValue,
+    });
 
-   // Mock data for the list view 
+   /* // Mock data for the list view 
   static const List<Map<String, dynamic>> mockTransactions = [
     {'name': 'Travel', 'date': '26-11-23', 'amount': -10000.0, 'icon': Icons.airplanemode_active},
     {'name': 'Food', 'date': '24-11-23', 'amount': -2000.0, 'icon': Icons.fastfood},
     {'name': 'Shopping', 'date': '23-11-23', 'amount': -3000.0, 'icon': Icons.shopping_bag},
     {'name': 'Salary', 'date': '20-11-23', 'amount': 50000.0, 'icon': Icons.account_balance_wallet},
   ];
-
+ */
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    // throw UnimplementedError();
-
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -186,31 +321,90 @@ class TransactionDetailsView extends StatelessWidget{
             ),
           
           ),
-          Expanded(child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            children: [
-              ListTile(
-                title: Text('This week (26 Nov to 30 Nov)',
-                style: TextStyle(color: priColor),
-                ),
+          Expanded(child: RefreshIndicator(onRefresh: ()async{
+            ref.invalidate(txProv);
 
-                
-                // _TransactionItem(name: )
-                
+            await ref.read(txProv.future);
+
+          },
+          child: txAsyncValue.when(data: (transactions){
+            if (transactions.isEmpty){
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+                    SizedBox(height: 16,),
+                    Text(
+                      'No Transactions yet',
+                      style: TextStyle(
+                        color: Colors.grey, fontSize: 16
+                      ),
+                      
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'M-Pesa transactions will appear here automattically',
+                      style: TextStyle(color: Colors.grey,
+                      fontSize: 12),
+
+                      textAlign: TextAlign.center,
+                    ),
+                    ],
+                    ),
+                    
+          );
+                    }
+                    
+
+            return ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8
               ),
-
-              ...mockTransactions.map(
-                (tx) => _TransactionItem(
-                  name: tx['name'] as String, 
-                  amount: tx['amount'] as double, 
-                  date: tx['date'] as String, 
-                  icon: tx['icon'] as IconData)).toList(),
-              
-            ],
-          )),
+              children: [
+                ListTile(
+                  title: Text(
+                    'Recent Transactions',
+                    style: TextStyle(
+                      color: priColor,
+                      fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  
+                ),
+                ...transactions.map((tx)=> _TransactionItem(transaction: tx)).toList(),
+              ],
+            );
+          }, 
+          loading: () => ListView(children: [
+            SizedBox(height: 100),
+            Center(child: CircularProgressIndicator()),
+            ]
+          ),
+          error: (error, stack) => ListView( 
+            children: [
+            SizedBox(height: 100,),  
+            Center(
+            child: Column(
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red,),
+                SizedBox(height: 16),
+                Text('Error loading transactions', style: TextStyle(color: Colors.red),),
+                SizedBox(height: 8.0,),
+                Text(error.toString(), style: TextStyle(fontSize: 12)),
+                SizedBox(height: 16.0,),
+                ElevatedButton(onPressed: () =>ref.invalidate(txProv), 
+                child: Text('Retry'),
+                ),
+              ],
+            ),
+          ), ],
+          ),
+          ),
 
         
-          
+          ),
+          ),
       ],
     );
   }
@@ -229,53 +423,124 @@ class TransactionDetailsView extends StatelessWidget{
   }
 }
 
+
 class _TransactionItem extends StatelessWidget{
 
-  final String name;
-  final double amount;
-  final String date;
-  final IconData icon;
+  final Transaction transaction;
 
   const _TransactionItem({
-    required this.name,
-    required this.amount,
-    required this.date,
-    required this.icon,
+    required this.transaction,
   });
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    // throw UnimplementedError();
-
-    final isExpense = amount < 0;
-
+    final isExpense = transaction.type == 'outbound' || transaction.type == 'withdrawal';
+    IconData icon = _getIcon();
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: priColor.withOpacity(0.1),
         child: Icon(icon, color: priColor, size: 20,),
       ),
-      title: Text(name),
+      title: Text(transaction.description ?? transaction.vendor ?? 'Uknown'),
+      subtitle: Row(
+        children: [
+          Text(
+            _formatDate(transaction.date),
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey
+            ),
+          ),
+          if(transaction.mpesaReference != null) ...[
+            SizedBox(width: 8),
+            Text(
+              'Ref: ${transaction.mpesaReference}',
+              style: TextStyle(fontSize: 10.0, color: Colors.grey),
+
+            ),
+          ],
+        ],
+      ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
 
         children: [
           Text(
-            '${isExpense ? '-kes' : '+kes'}${amount.abs().toStringAsFixed(0)}',
+            '${isExpense ? '-' : '+'}KES${transaction.amount?.toStringAsFixed(0) ?? '0'}',
+
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isExpense ? Colors.red.shade700 : Colors.grey
+            ),
+          ),
+          if (transaction.balance != null)
+          Text(
+            'Bal: ${transaction.balance!.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey,
             ),
           ),
         ],
       ),
     );
 
-    
-  }
+}
+
+    IconData _getIcon(){
+      switch(transaction.type){
+        case 'inbound':
+        return Icons.arrow_downward;
+        case 'withdrawal':
+        return Icons.local_atm;
+        case 'deposit':
+        return Icons.account_balance;
+        case 'outbound':
+        default:
+          final vendor = (transaction.vendor ?? transaction.description ?? '').toLowerCase();
+
+          if (vendor.contains('food') || vendor.contains('restaurant') || vendor.contains('cafe') || vendor.contains('hotel')){
+            return Icons.fastfood;
+          }
+          if (vendor.contains('shop') || vendor.contains('store') || vendor.contains('market')){
+            return Icons.shopping_bag;
+          }
+          if (vendor.contains('uber') || vendor.contains('bolt') || vendor.contains('taxi') || vendor.contains('transport')){
+            return Icons.local_taxi;
+          }
+          if (vendor.contains('fuel') || vendor.contains('petrol')){
+            return Icons.local_gas_station;
+          }
+          if (vendor.contains('electric') || vendor.contains('kplc') || vendor.contains('water') || vendor.contains('bill')){
+            return Icons.receipt;
+          }
+          return Icons.payments;
+      }
+    }
+
+    String _formatDate(DateTime? date){
+
+      if (date == null) return 'No date';
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays == 0){
+        return 'Today ${date.hour}: ${date.minute.toString().padLeft(2, '0')}';
+      }
+      else if(difference.inDays ==1){
+        return 'Yesterday';
+      }
+      else if(difference.inDays <7){
+        return '${difference.inDays} days ago';
+      }
+      else{
+        return '${date.day}/${date.month}/${date.year}';
+      }
+    }
 
 }
+
 
 
 
