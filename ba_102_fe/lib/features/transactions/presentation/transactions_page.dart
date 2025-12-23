@@ -13,12 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const Color priColor = Color(0xFF4B0082);
 
 final txProv = FutureProvider<List<Transaction>>((ref) async{
-  print("txProv: Triggered. Fetching transactions...");
   final db = await DatabaseHelper.instance.database;
   final localService = TransactionsLs(db);
-  final localTx = await localService.getTransactions();
-  print("txProv: Found ${localTx.length} transactions");
-  return localTx;
+  return await localService.getTransactions();
   /* try{
    /* // try online
     final onlineTx = await TransactionService().fetchTx();
@@ -114,6 +111,7 @@ IconButton(
       "REPLACEME Confirmed. Ksh2,500.00 sent to KPLC for account 12345678 on 23/12/25 at 1:00 PM.",
       "REPLACEME Confirmed. Ksh150.00 sent to BOLT TAXI on 23/12/25 at 2:30 PM.",
       "REPLACEME Confirmed. Ksh50.00 bought Safaricom Airtime on 23/12/25 at 3:00 PM.",
+      "REPLACEME Confirmed. Ksh3,000.00 sent to NAIVAS for account GROCERIES on 10/01/26 at 10:00 AM.",
     ];
     
     // Pick a random message and inject a random reference

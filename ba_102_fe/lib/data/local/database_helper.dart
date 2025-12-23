@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 5,
+      version: 7,
       
     
 
@@ -34,6 +34,7 @@ class DatabaseHelper {
       onUpgrade: _upgradeDB,
       );
 
+    await _seedData(db);
     return db;
   }
 
@@ -46,7 +47,9 @@ CREATE TABLE budget_plans (
     name TEXT NOT NULL,
     start_date TEXT,
     end_date TEXT,    
-    status TEXT
+    status TEXT,
+    limit_amount REAL DEFAULT 0.0,
+    plan_type TEXT DEFAULT 'monthly'
    );
     '''
 );
@@ -86,7 +89,33 @@ CREATE TABLE vendor_mappings (
 );
 ''');
 
-return db;
+    await _seedData(db);
+    return db;
+  }
+
+  Future<void> _seedData(Database db) async {
+    final List<String> defaultCategories = [
+      'Food',
+      'Utilities',
+      'Transport',
+      'Shopping',
+      'Entertainment'
+    ];
+
+    for (var name in defaultCategories) {
+      final List<Map<String, dynamic>> existing = await db.query(
+        'budget_category',
+        where: 'name = ?',
+        whereArgs: [name],
+      );
+
+      if (existing.isEmpty) {
+        await db.insert('budget_category', {
+          'name': name,
+          'limit_amount': 0.0,
+        });
+      }
+    }
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async{
@@ -138,6 +167,16 @@ return db;
     if (oldVersion < 5) {
       try {
         await db.execute('ALTER TABLE budget_category ADD COLUMN limit_amount REAL DEFAULT 0.0');
+      } catch (_) {}
+    }
+    if (oldVersion < 6) {
+      try {
+        await db.execute('ALTER TABLE budget_plans ADD COLUMN limit_amount REAL DEFAULT 0.0');
+      } catch (_) {}
+    }
+    if (oldVersion < 7) {
+      try {
+        await db.execute('ALTER TABLE budget_plans ADD COLUMN plan_type TEXT DEFAULT "monthly"');
       } catch (_) {}
     }
     print('Database upgraded from $oldVersion to $newVersion');

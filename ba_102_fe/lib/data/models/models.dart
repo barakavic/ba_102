@@ -118,49 +118,42 @@ class Category{
     required this.name,
     this.limitAmount = 0.0,
     required this.transactions,
-    
   });
 
-  Category copyWith({
-  int? id,
-  String? name,
-  double? limitAmount,
-  List<Transaction>? transactions,
-}) {
-  return Category(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    limitAmount: limitAmount ?? this.limitAmount,
-    transactions: transactions ?? this.transactions,
+  factory Category.fromJson(Map<String, dynamic> json) => Category(
+    id: json['id'], 
+    name: json['name'], 
+    limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    transactions: (json['transactions'] as List?)?.map((t) => Transaction.fromJson(t)).toList() ?? [],
   );
-}
 
-  // API deserializaton
-  factory Category.fromJson(
-    Map<String, dynamic> json
-  ) => Category(id: json['id'],
-  name: json['name']?? '', 
-  limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
-  transactions: (json['transactions'] as List<dynamic>?)?.
-  map((e)=>Transaction.
-  fromJson(e)).toList()??[],
-  );
-  
+  Map<String, dynamic> toMap() => {
+    if (id != 0) 'id': id,
+    'name': name,
+    'limit_amount': limitAmount,
+  };
+
   factory Category.fromMap(Map<String, dynamic> map) => Category(
     id: map['id'] as int, 
     name: map['name'] ?? '', 
     limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
     transactions: const[],
+  );
+
+  Category copyWith({
+    int? id,
+    String? name,
+    double? limitAmount,
+    List<Transaction>? transactions,
+  }) {
+    return Category(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      limitAmount: limitAmount ?? this.limitAmount,
+      transactions: transactions ?? this.transactions,
     );
-
-    // Local DB Mapping
-  Map<String, dynamic> toMap()=>{
-    if (id !=0) 'id':id,
-    'name':name,
-    'limit_amount': limitAmount,
-    };
+  }
 }
-
 
 class Plan {
   final int id;
@@ -168,47 +161,46 @@ class Plan {
   final DateTime startDate;
   final DateTime endDate;
   final String status;
-  
+  final double limitAmount;
+  final String planType;
 
+  Plan({
+    required this.id,
+    required this.name,
+    required this.startDate,
+    required this.endDate,
+    required this.status,
+    this.limitAmount = 0.0,
+    this.planType = 'monthly',
+  });
 
-Plan({
-  required this.id,
-  required this.name,
-  required this.startDate,
-  required this.endDate,
-  required this.status,
-  
-});
-
-// API Deserialization
-factory Plan.fromJson(Map<String, dynamic> json) =>Plan(
-  id: json['id'], 
-  name: json['name'], 
-  startDate: (DateTime.parse(json['start_date'])), 
-  endDate: (DateTime.parse(json['end_date'])), 
-  status: json['status'] ?? 'ACTIVE', 
-  
+  factory Plan.fromJson(Map<String, dynamic> json) => Plan(
+    id: json['id'], 
+    name: json['name'], 
+    startDate: DateTime.parse(json['start_date']), 
+    endDate: DateTime.parse(json['end_date']), 
+    status: json['status'] ?? 'ACTIVE', 
+    limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    planType: json['plan_type'] ?? 'monthly',
   );
-  
 
-  
-
-// SQLite serialization
-  Map<String, dynamic> toMap() =>{
-    if (id != 0 ) 'id': id,
+  Map<String, dynamic> toMap() => {
+    if (id != 0) 'id': id,
     'name': name,
-    'start_date':startDate.toIso8601String(),
-    'end_date':endDate.toIso8601String(),
+    'start_date': startDate.toIso8601String(),
+    'end_date': endDate.toIso8601String(),
     'status': status,
-   
+    'limit_amount': limitAmount,
+    'plan_type': planType,
   };
 
-  factory Plan.fromMap(Map<String,dynamic> map) => Plan(
-  id: map['id'], 
-  name: map['name'], 
-  startDate: DateTime.parse(map['start_date']), 
-  endDate: DateTime.parse(map['end_date']), 
-  status: map['status'] ?? 'ACTIVE', 
-  
-   );
+  factory Plan.fromMap(Map<String, dynamic> map) => Plan(
+    id: map['id'], 
+    name: map['name'], 
+    startDate: DateTime.parse(map['start_date']), 
+    endDate: DateTime.parse(map['end_date']), 
+    status: map['status'] ?? 'ACTIVE', 
+    limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    planType: map['plan_type'] ?? 'monthly',
+  );
 }

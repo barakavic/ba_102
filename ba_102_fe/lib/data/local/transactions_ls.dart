@@ -21,19 +21,16 @@ class TransactionsLs {
         }
       }
 
-    print('insertTransaction: Attempting to insert ${transaction.mpesaReference}');
     final id = await db.insert(
     'transactions', 
     transaction.toMap(), 
     conflictAlgorithm: ConflictAlgorithm.replace
     );
 
-    print('insertTransaction: Success with id: $id');
     return id;
     }
-    catch(e, stack){
-      print('insertTransaction: Error: $e');
-      print('insertTransaction: Stack: $stack');
+    catch(e){
+      print('insertTransaction Error: $e');
       rethrow;
     }
  }

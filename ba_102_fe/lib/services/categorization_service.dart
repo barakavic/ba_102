@@ -9,6 +9,7 @@ class CategorizationService {
   // Hardcoded rules for initial auto-categorization
   final Map<String, String> _hardcodedRules = {
     'safaricom data bundles': 'Utilities',
+    'safaricom airtime': 'Utilities',
     'kplc': 'Utilities',
     'kfc': 'Food',
     'uber': 'Transport',
@@ -16,6 +17,12 @@ class CategorizationService {
     'zuku': 'Utilities',
     'netflix': 'Entertainment',
     'airtel': 'Utilities',
+    'naivas': 'Shopping',
+    'carrefour': 'Shopping',
+    'jumia': 'Shopping',
+    'java house': 'Food',
+    'pizza inn': 'Food',
+    'chicken inn': 'Food',
   };
 
   Future<int?> getCategoryIdForVendor(String vendorName) async {

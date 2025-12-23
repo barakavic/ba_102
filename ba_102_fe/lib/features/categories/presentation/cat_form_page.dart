@@ -10,7 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class CatFormPage extends ConsumerStatefulWidget{
   
   final int planId;
-  const CatFormPage({super.key, required this.planId});
+  final Category? category;
+  const CatFormPage({super.key, required this.planId, this.category});
 
   @override
   ConsumerState<CatFormPage> createState() => _CatFormPageState();
@@ -24,10 +25,18 @@ class _CatFormPageState extends ConsumerState<CatFormPage>{
   final limitCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.category != null) {
+      nameCtrl.text = widget.category!.name;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
    
    return Scaffold(
-    appBar: AppBar(title: Text('Create Category'),
+    appBar: AppBar(title: Text(widget.category != null ? 'Edit Category' : 'Create Category'),
     ),
     body: Padding(padding: EdgeInsets.all(16),
     child: Column(
@@ -36,13 +45,6 @@ class _CatFormPageState extends ConsumerState<CatFormPage>{
           controller: nameCtrl,
           decoration: const InputDecoration(labelText: "Category Name"),
         ),
-        TextField(
-          controller: limitCtrl,
-          decoration: const InputDecoration(labelText: "Input the limit"),
-
-          
-        ),
-
         const SizedBox(
             height: 20,
           ),
@@ -52,18 +54,22 @@ class _CatFormPageState extends ConsumerState<CatFormPage>{
 
           final db = await DatabaseHelper.instance.database;
           final category = Category(
-            id: 0, 
+            id: widget.category?.id ?? 0, 
             name: nameCtrl.text.trim(), 
-            limitAmount: double.tryParse(limitCtrl.text.trim()) ?? 0.0,
-            transactions: []
+            limitAmount: 0.0,
+            transactions: widget.category?.transactions ?? []
           );
 
-          await CategoryLs(db).insertCategory(category);
+          if (widget.category != null) {
+            await CategoryLs(db).updateCategory(category);
+          } else {
+            await CategoryLs(db).insertCategory(category);
+          }
 
           ref.refresh(CategoriesProvider);
           Navigator.pop(context);
         }, 
-        child: Text("Save Category"))
+        child: Text(widget.category != null ? "Update Category" : "Save Category"))
       ],
     ),
     ),
