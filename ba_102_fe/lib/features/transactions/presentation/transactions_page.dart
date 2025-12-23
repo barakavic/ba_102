@@ -329,35 +329,41 @@ class TransactionDetailsView extends StatelessWidget{
           },
           child: txAsyncValue.when(data: (transactions){
             if (transactions.isEmpty){
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 16,),
-                    Text(
-                      'No Transactions yet',
-                      style: TextStyle(
-                        color: Colors.grey, fontSize: 16
-                      ),
-                      
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'M-Pesa transactions will appear here automattically',
-                      style: TextStyle(color: Colors.grey,
-                      fontSize: 12),
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+                        SizedBox(height: 16,),
+                        Text(
+                          'No Transactions yet',
+                          style: TextStyle(
+                            color: Colors.grey, fontSize: 16
+                          ),
+                          
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'M-Pesa transactions will appear here automattically',
+                          style: TextStyle(color: Colors.grey,
+                          fontSize: 12),
 
-                      textAlign: TextAlign.center,
-                    ),
-                    ],
-                    ),
-                    
-          );
-                    }
+                          textAlign: TextAlign.center,
+                        ),
+                        ],
+                        ),
+                  ),
+                ],
+              );
+            }
                     
 
             return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(
                 horizontal: 8
               ),
@@ -376,12 +382,15 @@ class TransactionDetailsView extends StatelessWidget{
               ],
             );
           }, 
-          loading: () => ListView(children: [
+          loading: () => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
             SizedBox(height: 100),
             Center(child: CircularProgressIndicator()),
             ]
           ),
           error: (error, stack) => ListView( 
+            physics: const AlwaysScrollableScrollPhysics(),
             children: [
             SizedBox(height: 100,),  
             Center(

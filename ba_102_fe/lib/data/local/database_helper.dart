@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       
     
 
@@ -67,9 +67,11 @@ CREATE TABLE transactions (
     date TEXT NOT NULL,
     category_id INTEGER,
     plan_id INTEGER,
+    type TEXT DEFAULT 'outbound',
+    vendor TEXT,
     mpesa_reference TEXT UNIQUE,
     balance REAL,
-    real_sms_message TEXT,
+    raw_sms_message TEXT,
     FOREIGN KEY (category_id) REFERENCES budget_category(id),
     FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
 );
@@ -83,15 +85,36 @@ return db;
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async{
     if (oldVersion < 2){
-      await db.execute('ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT "outbound"');
-      await db.execute('ALTER TABLE transactions ADD COLUMN vendor TEXT');
-      await db.execute('ALTER TABLE transactions ADD COLUMN mpesa_reference TEXT');
-      await db.execute('ALTER TABLE transactions ADD COLUMN balance REAL');
-      await db.execute('ALTER TABLE transaction ADD COLUMN raw_sms_message TEXT');
-
-      print('Database upgraded to version $newVersion');
+      // Version 2 additions (with fixes)
+      try { await db.execute('ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT "outbound"'); } catch(_) {}
+      try { await db.execute('ALTER TABLE transactions ADD COLUMN vendor TEXT'); } catch(_) {}
+      try { await db.execute('ALTER TABLE transactions ADD COLUMN mpesa_reference TEXT'); } catch(_) {}
+      try { await db.execute('ALTER TABLE transactions ADD COLUMN balance REAL'); } catch(_) {}
+      try { await db.execute('ALTER TABLE transactions ADD COLUMN raw_sms_message TEXT'); } catch(_) {}
     }
-
+    
+    if (oldVersion < 3) {
+      // Ensure all columns exist in case version 2 upgrade failed or was partial
+      final columns = await db.rawQuery('PRAGMA table_info(transactions)');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+      
+      if (!columnNames.contains('type')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN type TEXT DEFAULT "outbound"');
+      }
+      if (!columnNames.contains('vendor')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN vendor TEXT');
+      }
+      if (!columnNames.contains('raw_sms_message')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN raw_sms_message TEXT');
+      }
+      if (!columnNames.contains('mpesa_reference')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN mpesa_reference TEXT');
+      }
+      if (!columnNames.contains('balance')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN balance REAL');
+      }
+    }
+    print('Database upgraded from $oldVersion to $newVersion');
   }
 
 

@@ -65,6 +65,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
   }
 
   void _handleIncomingSms(Map<String,dynamic> smsData ) async{
+    print("Dart: _handleIncomingSms triggered with data: $smsData");
     final String body = smsData['body'];
     final int timestamp = smsData['timestamp'];
 
@@ -123,7 +124,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
       return tx.sender!;
     }
     else if(tx.type == TransactionType.outbound && tx.recipient != null){
-      return tx.sender!;
+      return tx.recipient!;
 
     }
     else if(tx.type == TransactionType.withdrawal){
