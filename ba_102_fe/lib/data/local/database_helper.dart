@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 3,
+      version: 5,
       
     
 
@@ -54,7 +54,8 @@ CREATE TABLE budget_plans (
  await db.execute('''
 CREATE TABLE budget_category (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    limit_amount REAL DEFAULT 0.0
     );
 
 ''');
@@ -77,9 +78,14 @@ CREATE TABLE transactions (
 );
 ''');
 
-/* await _importCSV(db, 'assets/test_files/BudgetPlan.csv', 'budget_plans');
-await _importCSV(db, 'assets/test_files/BudgetCategory.csv', 'budget_category');
-await _importCSV(db, 'assets/test_files/transaction.csv', 'transactions'); */
+await db.execute('''
+CREATE TABLE vendor_mappings (
+    vendor_name TEXT PRIMARY KEY,
+    category_id INTEGER,
+    FOREIGN KEY (category_id) REFERENCES budget_category(id)
+);
+''');
+
 return db;
   }
 
@@ -113,6 +119,26 @@ return db;
       if (!columnNames.contains('balance')) {
         await db.execute('ALTER TABLE transactions ADD COLUMN balance REAL');
       }
+      if (!columnNames.contains('category_id')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN category_id INTEGER');
+      }
+      if (!columnNames.contains('plan_id')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN plan_id INTEGER');
+      }
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS vendor_mappings (
+          vendor_name TEXT PRIMARY KEY,
+          category_id INTEGER,
+          FOREIGN KEY (category_id) REFERENCES budget_category(id)
+        )
+      ''');
+    }
+    if (oldVersion < 5) {
+      try {
+        await db.execute('ALTER TABLE budget_category ADD COLUMN limit_amount REAL DEFAULT 0.0');
+      } catch (_) {}
     }
     print('Database upgraded from $oldVersion to $newVersion');
   }

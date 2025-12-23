@@ -5,7 +5,7 @@ import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
-
+import 'package:ba_102_fe/services/categorization_service.dart';
 
 class SmsState {
   final MpesaTransaction? lastTransaction;
@@ -64,7 +64,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
 
   }
 
-  void _handleIncomingSms(Map<String,dynamic> smsData ) async{
+  void _handleIncomingSms(Map<String,dynamic> smsData, {bool isSimulated = false}) async{
     print("Dart: _handleIncomingSms triggered with data: $smsData");
     final String body = smsData['body'];
     final int timestamp = smsData['timestamp'];
@@ -83,7 +83,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
       );
 
       
-      await _saveToDatabase(mpesaTransaction);
+      await _saveToDatabase(mpesaTransaction, isSimulated: isSimulated);
 
       ref.invalidate(txProv);
     }
@@ -93,17 +93,32 @@ class SmsNotifier extends StateNotifier<SmsState> {
     }
   }
 
-  String _generateDescription(MpesaTransaction tx){
+  // Public method for testing/simulation
+  void simulateSms(String body, String sender) {
+    _handleIncomingSms({
+      'body': body,
+      'sender': sender,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    }, isSimulated: true);
+  }
+
+  String _generateDescription(MpesaTransaction tx, {bool isSimulated = false}){
+    String desc = "";
     switch(tx.type){
       case TransactionType.inbound:
-      return 'Received from ${tx.sender ?? 'uknown'}';
+      desc = 'Received from ${tx.sender ?? 'uknown'}';
+      break;
       case TransactionType.outbound:
-      return 'Sent to ${tx.recipient ?? 'uknown'}';
+      desc = 'Sent to ${tx.recipient ?? 'uknown'}';
+      break;
       case TransactionType.withdrawal:
-      return 'M-Pesa withdrawal';
+      desc = 'M-Pesa withdrawal';
+      break;
       case TransactionType.deposit:
-      return 'M-pesa Withdrawal';
+      desc = 'M-Pesa deposit';
+      break;
     }
+    return isSimulated ? "[DEBUG] $desc" : desc;
   }
 
   String _getTransactionType(TransactionType type){
@@ -137,24 +152,29 @@ class SmsNotifier extends StateNotifier<SmsState> {
     return 'Unknown';
   }
 
-  Future<void> _saveToDatabase(MpesaTransaction mpesaTransaction) async{
+  Future<void> _saveToDatabase(MpesaTransaction mpesaTransaction, {bool isSimulated = false}) async{
     try{
       final db = await DatabaseHelper.instance.database;
       final localService = TransactionsLs(db);
 
-      final transaction = Transaction(amount: mpesaTransaction.amount, 
-      description: _generateDescription(mpesaTransaction), 
-      date: mpesaTransaction.timestamp,
-      type: _getTransactionType(mpesaTransaction.type),
-      vendor: _getVendorName(mpesaTransaction),
-      mpesaReference: mpesaTransaction.reference,
-      balance: mpesaTransaction.balance,
-      rawSmsMessage: mpesaTransaction.rawMessage,
+      final vendor = _getVendorName(mpesaTransaction);
+      final categoryId = await CategorizationService().getCategoryIdForVendor(vendor);
 
+      final transaction = Transaction(
+        amount: mpesaTransaction.amount, 
+        description: _generateDescription(mpesaTransaction, isSimulated: isSimulated), 
+        date: mpesaTransaction.timestamp,
+        type: _getTransactionType(mpesaTransaction.type),
+        vendor: vendor,
+        categoryId: categoryId,
+        mpesaReference: mpesaTransaction.reference,
+        balance: mpesaTransaction.balance,
+        rawSmsMessage: mpesaTransaction.rawMessage,
       );
 
-      await localService.insertTransaction(transaction);
-      print("Transaction saved to database");
+      print("Saving transaction to DB: ${transaction.mpesaReference}");
+      final id = await localService.insertTransaction(transaction);
+      print("Transaction saved to database with ID: $id");
 
     }
     catch(e){

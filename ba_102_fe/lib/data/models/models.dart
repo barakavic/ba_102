@@ -66,7 +66,7 @@ class Transaction{
   id: map['id'], 
   amount: (map['amount']as num ?)?.toDouble() ?? 0.0, 
   description: map['description'] ?? '', 
-  date: DateTime.parse(map['date']),
+  date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
   categoryId: map['category_id'] as int?,
   planId: map['plan_id'] as int?,
   type: map['type'] as String? ?? 'outbound',
@@ -110,11 +110,13 @@ class Transaction{
 class Category{
   final int id;
   final String name;
+  final double limitAmount;
   final List<Transaction> transactions;
 
   Category({
     required this.id,
     required this.name,
+    this.limitAmount = 0.0,
     required this.transactions,
     
   });
@@ -122,11 +124,13 @@ class Category{
   Category copyWith({
   int? id,
   String? name,
+  double? limitAmount,
   List<Transaction>? transactions,
 }) {
   return Category(
     id: id ?? this.id,
     name: name ?? this.name,
+    limitAmount: limitAmount ?? this.limitAmount,
     transactions: transactions ?? this.transactions,
   );
 }
@@ -136,6 +140,7 @@ class Category{
     Map<String, dynamic> json
   ) => Category(id: json['id'],
   name: json['name']?? '', 
+  limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
   transactions: (json['transactions'] as List<dynamic>?)?.
   map((e)=>Transaction.
   fromJson(e)).toList()??[],
@@ -144,6 +149,7 @@ class Category{
   factory Category.fromMap(Map<String, dynamic> map) => Category(
     id: map['id'] as int, 
     name: map['name'] ?? '', 
+    limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
     transactions: const[],
     );
 
@@ -151,6 +157,7 @@ class Category{
   Map<String, dynamic> toMap()=>{
     if (id !=0) 'id':id,
     'name':name,
+    'limit_amount': limitAmount,
     };
 }
 

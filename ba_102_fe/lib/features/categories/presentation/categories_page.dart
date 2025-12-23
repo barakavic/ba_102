@@ -8,6 +8,8 @@ import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/ui/pages/categoryDetailsPage.dart';
 import 'package:ba_102_fe/features/categories/presentation/cat_form_page.dart';
 
+const Color priColor = Color(0xFF4B0082);
+
 final CategoriesProvider = FutureProvider<List<Category>>((ref) async {
   
   try{
@@ -84,17 +86,61 @@ class CategoriesPage extends ConsumerWidget{
                   elevation: 2,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
-
                   ),
-                  child: Center(
-                    child: Text(
-                      category.name,
-                      style: const TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.w600,
+                  color: category.id == -1 ? Colors.orange.shade50 : Colors.white,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        category.id == -1 ? Icons.help_outline : Icons.folder_open,
+                        color: category.id == -1 ? Colors.orange : priColor,
+                        size: 32,
                       ),
-                    ),
-                                    
+                      const SizedBox(height: 8),
+                      Text(
+                        category.name,
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w600,
+                          color: category.id == -1 ? Colors.orange.shade900 : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${category.transactions.length} Transactions',
+                        style: TextStyle(
+                          fontSize: 12.0,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      if (category.id != -1 && category.limitAmount > 0) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: (category.transactions.fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)) / category.limitAmount).clamp(0, 1),
+                                  backgroundColor: Colors.grey.shade200,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    (category.transactions.fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)) > category.limitAmount)
+                                        ? Colors.red
+                                        : priColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'KES ${category.transactions.fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)).toStringAsFixed(0)} / ${category.limitAmount.toStringAsFixed(0)}',
+                                style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               );

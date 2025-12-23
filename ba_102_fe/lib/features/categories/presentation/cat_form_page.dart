@@ -52,9 +52,10 @@ class _CatFormPageState extends ConsumerState<CatFormPage>{
 
           final db = await DatabaseHelper.instance.database;
           final category = Category(
-          id: 0, 
-          name: nameCtrl.text.trim(), 
-          transactions: []
+            id: 0, 
+            name: nameCtrl.text.trim(), 
+            limitAmount: double.tryParse(limitCtrl.text.trim()) ?? 0.0,
+            transactions: []
           );
 
           await CategoryLs(db).insertCategory(category);

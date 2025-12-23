@@ -13,11 +13,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const Color priColor = Color(0xFF4B0082);
 
 final txProv = FutureProvider<List<Transaction>>((ref) async{
-  
- final db = await DatabaseHelper.instance.database;
- final localService = TransactionsLs(db);
- final localTx = await localService.getTransactions();
- return localTx;
+  print("txProv: Triggered. Fetching transactions...");
+  final db = await DatabaseHelper.instance.database;
+  final localService = TransactionsLs(db);
+  final localTx = await localService.getTransactions();
+  print("txProv: Found ${localTx.length} transactions");
+  return localTx;
   /* try{
    /* // try online
     final onlineTx = await TransactionService().fetchTx();
@@ -105,22 +106,23 @@ class TransactionsPage  extends ConsumerWidget{
 
 // Test Message buttton
 IconButton(
-  icon: Icon(Icons.play_arrow),
+  icon: const Icon(Icons.bug_report, color: Colors.orange),
+  tooltip: 'Simulate M-Pesa SMS',
   onPressed: () {
-    final testMessage = "TLMIK1QOMY Confirmed. Ksh3.00 sent to SAFARICOM DATA BUNDLES for account SAFARICOM DATA BUNDLES on 22/12/25 at 7:52 PM. New M-PESA balance is Ksh922.28. Transaction cost, Ksh0.00.";
-    final parser = MpesaParserService();
-    final result = parser.parseMessage(testMessage, DateTime.now().millisecondsSinceEpoch);
+    final testMessages = [
+      "REPLACEME Confirmed. Ksh1,200.00 sent to KFC ADAMS for account KFC on 23/12/25 at 12:14 PM.",
+      "REPLACEME Confirmed. Ksh2,500.00 sent to KPLC for account 12345678 on 23/12/25 at 1:00 PM.",
+      "REPLACEME Confirmed. Ksh150.00 sent to BOLT TAXI on 23/12/25 at 2:30 PM.",
+      "REPLACEME Confirmed. Ksh50.00 bought Safaricom Airtime on 23/12/25 at 3:00 PM.",
+    ];
     
-    if (result != null) {
-      print("✅ Parse SUCCESS!");
-      print("Reference: ${result.reference}");
-      print("Amount: ${result.amount}");
-      print("Recipient: ${result.recipient}");
-      print("Balance ${result.balance}");
-      print("Type: ${result.type}");
-    } else {
-      print("❌ Parse FAILED");
-    }
+    // Pick a random message and inject a random reference
+    final random = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+    final rawMsg = testMessages[DateTime.now().millisecond % testMessages.length];
+    final msg = rawMsg.replaceFirst("REPLACEME", "TEST$random");
+
+    print("Simulating SMS: $msg");
+    ref.read(smsProvider.notifier).simulateSms(msg, "MPESA");
   },
 )
         ],
