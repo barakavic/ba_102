@@ -1,5 +1,5 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
-import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
+import 'package:ba_102_fe/providers/categories_provider.dart';
 import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -96,7 +96,7 @@ class CategorySelectionDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categoriesAsync = ref.watch(CategoriesProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return AlertDialog(
       title: const Text('Move to Category'),
@@ -131,7 +131,7 @@ class CategorySelectionDialog extends ConsumerWidget {
                       );
                     }
 
-                    ref.invalidate(CategoriesProvider);
+                    ref.invalidate(categoriesProvider);
                     ref.invalidate(txProv);
                     Navigator.pop(context); // Close dialog
                     Navigator.pop(context); // Go back to categories page to refresh

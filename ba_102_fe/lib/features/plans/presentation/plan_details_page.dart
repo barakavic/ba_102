@@ -3,6 +3,7 @@ import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/features/plans/presentation/plans_form_page.dart';
 import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
+import 'package:ba_102_fe/services/icon_service.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,11 +30,13 @@ final planTransactionsProvider = FutureProvider.family<List<Transaction>, Plan>(
   return maps.map((m) => Transaction.fromMap(m)).toList();
 });
 
-final planCategoriesProvider = FutureProvider<Map<int, String>>((ref) async {
+final planCategoriesProvider = FutureProvider<Map<int, Category>>((ref) async {
   final db = await DatabaseHelper.instance.database;
   final List<Map<String, dynamic>> maps = await db.query('budget_category');
-  final Map<int, String> categories = {for (var m in maps) m['id'] as int: m['name'] as String};
-  categories[-1] = 'Uncategorized';
+  final Map<int, Category> categories = {
+    for (var m in maps) m['id'] as int: Category.fromMap(m)
+  };
+  categories[-1] = Category(id: -1, name: 'Uncategorized', transactions: []);
   return categories;
 });
 
@@ -49,6 +52,16 @@ class PlanDetailsPage extends ConsumerStatefulWidget {
 class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
   bool _isTransactionsExpanded = false;
   CategoryViewType _categoryViewType = CategoryViewType.list;
+
+  Color _getCategoryColor(Category category, int index) {
+    if (category.id == -1) return Colors.orange;
+    if (category.color != null) {
+      try {
+        return Color(int.parse(category.color!));
+      } catch (_) {}
+    }
+    return _chartColors[index % _chartColors.length];
+  }
 
   final List<Color> _chartColors = [
     const Color(0xFF4B0082), // Indigo
@@ -219,7 +232,7 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
     );
   }
 
-  Widget _buildCategorySection(List<Transaction> transactions, AsyncValue<Map<int, String>> categoriesAsync) {
+  Widget _buildCategorySection(List<Transaction> transactions, AsyncValue<Map<int, Category>> categoriesAsync) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -452,7 +465,7 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
     );
   }
 
-  Widget _buildCategoryBreakdownList(List<Transaction> transactions, Map<int, String> categories) {
+  Widget _buildCategoryBreakdownList(List<Transaction> transactions, Map<int, Category> categories) {
     final Map<int, double> categoryTotals = {};
     for (var tx in transactions) {
       final catId = tx.categoryId ?? -1;
@@ -470,11 +483,12 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
       children: sortedCategories.asMap().entries.map((entry) {
         final index = entry.key;
         final catEntry = entry.value;
-        final catName = categories[catEntry.key] ?? 'Unknown';
+        final category = categories[catEntry.key] ?? Category(id: -1, name: 'Unknown', transactions: []);
         final amount = catEntry.value;
         final total = transactions.fold<double>(0, (sum, t) => sum + (t.amount ?? 0));
         final percentage = total > 0 ? amount / total : 0.0;
-        final color = _chartColors[index % _chartColors.length];
+        final color = _getCategoryColor(category, index);
+        final icon = IconService.getIcon(category.icon, category.name);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
@@ -493,14 +507,14 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.category_outlined, color: color, size: 20),
+                child: Icon(category.id == -1 ? Icons.help_outline : icon, color: color, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(catName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 4),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(2),
@@ -529,7 +543,7 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
     );
   }
 
-  Widget _buildCategoryChart(List<Transaction> transactions, Map<int, String> categories) {
+  Widget _buildCategoryChart(List<Transaction> transactions, Map<int, Category> categories) {
     final Map<int, double> categoryTotals = {};
     for (var tx in transactions) {
       final catId = tx.categoryId ?? -1;
@@ -544,6 +558,10 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
     }
 
     final total = transactions.fold<double>(0, (sum, t) => sum + (t.amount ?? 0));
+    final List<Color> sliceColors = sortedCategories.asMap().entries.map((e) {
+      final category = categories[e.value.key] ?? Category(id: -1, name: 'Unknown', transactions: []);
+      return _getCategoryColor(category, e.key);
+    }).toList();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -563,7 +581,7 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
                   size: const Size(200, 200),
                   painter: DonutChartPainter(
                     data: sortedCategories.map((e) => e.value / total).toList(),
-                    colors: _chartColors,
+                    colors: sliceColors,
                   ),
                 ),
                 Column(
@@ -586,8 +604,8 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
             children: sortedCategories.asMap().entries.map((entry) {
               final index = entry.key;
               final catEntry = entry.value;
-              final catName = categories[catEntry.key] ?? 'Unknown';
-              final color = _chartColors[index % _chartColors.length];
+              final category = categories[catEntry.key] ?? Category(id: -1, name: 'Unknown', transactions: []);
+              final color = _getCategoryColor(category, index);
               final percentage = (catEntry.value / total * 100).toInt();
 
               return Row(
@@ -603,7 +621,7 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '$catName ($percentage%)',
+                    '${category.name} ($percentage%)',
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
                   ),
                 ],

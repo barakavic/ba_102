@@ -4,35 +4,39 @@ import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/ui/pages/categoryDetailsPage.dart';
 import 'package:ba_102_fe/features/categories/presentation/cat_form_page.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
+import 'package:ba_102_fe/services/icon_service.dart';
+import 'package:ba_102_fe/providers/categories_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 const Color priColor = Color(0xFF4B0082);
 
-final CategoriesProvider = FutureProvider<List<Category>>((ref) async {
-  try {
-    final db = await DatabaseHelper.instance.database;
-    final localService = CategoryLs(db);
-    return await localService.getCategories();
-  } catch (e) {
-    print('Error fetching categories: $e');
-    return [];
-  }
-});
+
 
 class CategoriesPage extends ConsumerWidget {
   const CategoriesPage({super.key});
 
+  Color _getCategoryColor(Category category) {
+    if (category.id == -1) return Colors.orange;
+    if (category.color != null) {
+      try {
+        return Color(int.parse(category.color!));
+      } catch (_) {}
+    }
+    return priColor;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categoriesAsync = ref.watch(CategoriesProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
           await CategorizationService().recategorizeUncategorizedTransactions();
-          ref.invalidate(CategoriesProvider);
-          await ref.read(CategoriesProvider.future);
+          ref.invalidate(categoriesProvider);
+          await ref.read(categoriesProvider.future);
         },
         child: categoriesAsync.when(
           data: (categories) {
@@ -46,17 +50,20 @@ class CategoriesPage extends ConsumerWidget {
             }
 
             return Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                   childAspectRatio: 0.85,
                 ),
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
                   final category = categories[index];
+                  final color = _getCategoryColor(category);
+                  final icon = IconService.getIcon(category.icon, category.name);
+
                   return GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -66,12 +73,19 @@ class CategoriesPage extends ConsumerWidget {
                         ),
                       );
                     },
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: color.withOpacity(0.1)),
                       ),
-                      color: category.id == -1 ? Colors.orange.shade50 : Colors.white,
                       child: Stack(
                         children: [
                           if (category.id != -1)
@@ -79,7 +93,7 @@ class CategoriesPage extends ConsumerWidget {
                               top: 4,
                               right: 4,
                               child: PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                                icon: Icon(Icons.more_vert, size: 18, color: Colors.grey.shade400),
                                 onSelected: (value) async {
                                   if (value == 'edit') {
                                     Navigator.push(
@@ -107,7 +121,7 @@ class CategoriesPage extends ConsumerWidget {
                                     if (confirm == true) {
                                       final db = await DatabaseHelper.instance.database;
                                       await CategoryLs(db).deleteCategory(category.id);
-                                      ref.refresh(CategoriesProvider);
+                                      ref.refresh(categoriesProvider);
                                     }
                                   }
                                 },
@@ -121,42 +135,43 @@ class CategoriesPage extends ConsumerWidget {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  category.id == -1 ? Icons.help_outline : Icons.folder_open,
-                                  color: category.id == -1 ? Colors.orange : priColor,
-                                  size: 32,
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: color.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    category.id == -1 ? Icons.help_outline : icon,
+                                    color: color,
+                                    size: 28,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 12),
                                 Text(
                                   category.name,
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.w600,
-                                    color: category.id == -1 ? Colors.orange.shade900 : Colors.black87,
+                                  style: const TextStyle(
+                                    fontSize: 15.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${category.transactions.length} Transactions',
+                                  '${category.transactions.length} items',
                                   style: TextStyle(
-                                    fontSize: 12.0,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                Text(
-                                  'Lifetime Total',
-                                  style: TextStyle(
-                                    fontSize: 10.0,
+                                    fontSize: 11.0,
                                     color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'KES ${category.transactions.fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)).toStringAsFixed(0)}',
+                                  'KES ${NumberFormat('#,###').format(category.transactions.fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)))}',
                                   style: TextStyle(
                                     fontSize: 14.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: category.id == -1 ? Colors.orange.shade900 : priColor,
+                                    fontWeight: FontWeight.w900,
+                                    color: color,
                                   ),
                                 ),
                               ],
@@ -176,13 +191,14 @@ class CategoriesPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_category_fab',
+        backgroundColor: priColor,
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CatFormPage(planId: 0)),
           );
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

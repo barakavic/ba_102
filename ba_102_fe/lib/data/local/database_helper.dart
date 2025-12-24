@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 7,
+      version: 8,
       
     
 
@@ -58,7 +58,9 @@ CREATE TABLE budget_plans (
 CREATE TABLE budget_category (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    limit_amount REAL DEFAULT 0.0
+    limit_amount REAL DEFAULT 0.0,
+    icon TEXT,
+    color TEXT
     );
 
 ''');
@@ -177,6 +179,12 @@ CREATE TABLE vendor_mappings (
     if (oldVersion < 7) {
       try {
         await db.execute('ALTER TABLE budget_plans ADD COLUMN plan_type TEXT DEFAULT "monthly"');
+      } catch (_) {}
+    }
+    if (oldVersion < 8) {
+      try {
+        await db.execute('ALTER TABLE budget_category ADD COLUMN icon TEXT');
+        await db.execute('ALTER TABLE budget_category ADD COLUMN color TEXT');
       } catch (_) {}
     }
     print('Database upgraded from $oldVersion to $newVersion');

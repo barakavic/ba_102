@@ -38,6 +38,10 @@
     - Added **Frequent Spending**: Horizontal habit tracker identifying recurring vendors and total accumulated cost.
     - Added **Category Analytics**: Toggle between List view and a custom-painted **Donut Chart** with color-coded legends.
     - Added **Expandable Top Transactions**: Shows the top 2 "budget killers" with a **Budget Impact Badge** (% of total budget).
+  - **Feature**: Centralized Icon Management.
+    - Created `IconService` to remove hardcoded icon mappings.
+    - Added new icons including **Hospital**, **Travel**, **Gifts**, and **Subscriptions**.
+    - Expanded the color palette for categories.
   - **UX**: Implemented **Pull-to-Refresh** on Plans, Plan Details, and Categories pages.
     - Integrated automatic **Re-categorization** into the refresh action to fix "Uncategorized" transactions using the latest rules.
   - **Logic**: 
