@@ -49,3 +49,24 @@
     - Restricted editing of Plan Limits and Start Dates for active plans to ensure data integrity.
     - Filtered spending calculations to only include outbound payments and withdrawals (ignoring income).
   - **Fix**: Ensured "Uncategorized" category is permanently visible in the UI as a primary container.
+
+## version 1.4.0+6
+- **Frontend**: Flutter - Version 1.4.0+6
+- **Major Features**:
+  - **Smart Bulk Categorization**:
+    - When moving a transaction, the app detects other transactions from the same vendor.
+    - Prompts user to "Move All" or "Just This One".
+    - Automatically saves vendor-to-category mappings for future automation.
+  - **Hierarchical Categories**:
+    - Implemented Parent/Child category structure (1-level deep).
+    - Categories Page now shows only top-level categories with rolled-up totals.
+    - Tapping a parent opens a bottom sheet with sub-categories.
+    - Added "Move" functionality to re-parent categories.
+  - **Plan Analytics Refactor**:
+    - Created dedicated `PlanAnalyticsPage` for deep-dive charts and stats.
+    - Streamlined `PlanDetailsPage` to focus on "Health at a Glance" (Budget, Daily Insights, Pacing).
+  - **Test Data Engine**:
+    - Added `TestDataSeeder` utility.
+    - Debug button now seeds 40+ diverse transactions (Food, Utilities, Transport) for testing.
+  - **Roadmap**:
+    - Established internal strategic roadmap for future development.
