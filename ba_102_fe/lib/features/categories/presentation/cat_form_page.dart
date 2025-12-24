@@ -19,6 +19,7 @@ class _CatFormPageState extends ConsumerState<CatFormPage> {
   late final TextEditingController nameCtrl;
   late String selectedIcon;
   late Color selectedColor;
+  int? selectedParentId;
 
   final List<Map<String, dynamic>> availableIcons = IconService.availableIcons;
 
@@ -52,6 +53,7 @@ class _CatFormPageState extends ConsumerState<CatFormPage> {
     } else {
       selectedColor = availableColors[0];
     }
+    selectedParentId = widget.category?.parentId;
   }
 
   String? _getSuggestedIconKey(String name) {
@@ -208,6 +210,64 @@ class _CatFormPageState extends ConsumerState<CatFormPage> {
               ),
             ]),
 
+            const SizedBox(height: 25),
+            _buildSectionTitle("Belongs to (Parent Category)"),
+            ref.watch(categoriesProvider).when(
+              data: (categories) {
+                // Only categories that are NOT sub-categories themselves can be parents
+                // Also exclude the current category being edited
+                final potentialParents = categories.where((c) => 
+                  c.parentId == null && 
+                  c.id != widget.category?.id &&
+                  c.id != -1 // Exclude Uncategorized
+                ).toList();
+
+                // Check if the current category has children (if it does, it can't be a child)
+                final hasChildren = categories.any((c) => c.parentId == widget.category?.id);
+
+                if (hasChildren && widget.category != null) {
+                  return _buildCard([
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        "This category has sub-categories and must remain a Top-Level category.",
+                        style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ]);
+                }
+
+                return _buildCard([
+                  DropdownButtonHideUnderline(
+                    child: DropdownButton<int?>(
+                      value: selectedParentId,
+                      isExpanded: true,
+                      hint: const Text("None (Top-Level Category)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("None (Top-Level Category)"),
+                        ),
+                        ...potentialParents.map((cat) => DropdownMenuItem<int?>(
+                          value: cat.id,
+                          child: Row(
+                            children: [
+                              Icon(IconService.getIcon(cat.icon, cat.name), size: 18, color: Colors.grey),
+                              const SizedBox(width: 10),
+                              Text(cat.name),
+                            ],
+                          ),
+                        )),
+                      ],
+                      onChanged: (val) => setState(() => selectedParentId = val),
+                    ),
+                  ),
+                ]);
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, __) => const Text("Error loading categories"),
+            ),
+
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
@@ -228,6 +288,7 @@ class _CatFormPageState extends ConsumerState<CatFormPage> {
                     limitAmount: widget.category?.limitAmount ?? 0.0,
                     icon: selectedIcon,
                     color: selectedColor.value.toString(),
+                    parentId: selectedParentId,
                     transactions: widget.category?.transactions ?? [],
                   );
 

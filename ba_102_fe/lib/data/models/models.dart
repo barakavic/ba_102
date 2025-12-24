@@ -113,6 +113,7 @@ class Category{
   final double limitAmount;
   final String? icon;
   final String? color;
+  final int? parentId;
   final List<Transaction> transactions;
 
   Category({
@@ -121,6 +122,7 @@ class Category{
     this.limitAmount = 0.0,
     this.icon,
     this.color,
+    this.parentId,
     required this.transactions,
   });
 
@@ -130,6 +132,7 @@ class Category{
     limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
     icon: json['icon'] as String?,
     color: json['color'] as String?,
+    parentId: json['parent_id'] as int?,
     transactions: (json['transactions'] as List?)?.map((t) => Transaction.fromJson(t)).toList() ?? [],
   );
 
@@ -139,6 +142,7 @@ class Category{
     'limit_amount': limitAmount,
     'icon': icon,
     'color': color,
+    'parent_id': parentId,
   };
 
   factory Category.fromMap(Map<String, dynamic> map) => Category(
@@ -147,6 +151,7 @@ class Category{
     limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
     icon: map['icon'] as String?,
     color: map['color'] as String?,
+    parentId: map['parent_id'] as int?,
     transactions: const[],
   );
 
@@ -156,6 +161,7 @@ class Category{
     double? limitAmount,
     String? icon,
     String? color,
+    int? parentId,
     List<Transaction>? transactions,
   }) {
     return Category(
@@ -164,6 +170,7 @@ class Category{
       limitAmount: limitAmount ?? this.limitAmount,
       icon: icon ?? this.icon,
       color: color ?? this.color,
+      parentId: parentId ?? this.parentId,
       transactions: transactions ?? this.transactions,
     );
   }

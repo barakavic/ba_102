@@ -7,6 +7,7 @@ import 'package:ba_102_fe/features/categories/presentation/categories_page.dart'
 import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
 import 'package:ba_102_fe/providers/sms_provider.dart';
 import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
+import 'package:ba_102_fe/utils/test_data_seeder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -101,28 +102,50 @@ class TransactionsPage  extends ConsumerWidget{
           ),
           // In AppBar actions:
 
-// Test Message buttton
-IconButton(
-  icon: const Icon(Icons.bug_report, color: Colors.orange),
-  tooltip: 'Simulate M-Pesa SMS',
-  onPressed: () {
-    final testMessages = [
-      "REPLACEME Confirmed. Ksh1,200.00 sent to KFC ADAMS for account KFC on 23/12/25 at 12:14 PM.",
-      "REPLACEME Confirmed. Ksh2,500.00 sent to KPLC for account 12345678 on 23/12/25 at 1:00 PM.",
-      "REPLACEME Confirmed. Ksh150.00 sent to BOLT TAXI on 23/12/25 at 2:30 PM.",
-      "REPLACEME Confirmed. Ksh50.00 bought Safaricom Airtime on 23/12/25 at 3:00 PM.",
-      "REPLACEME Confirmed. Ksh3,000.00 sent to NAIVAS for account GROCERIES on 10/01/26 at 10:00 AM.",
-    ];
-    
-    // Pick a random message and inject a random reference
-    final random = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-    final rawMsg = testMessages[DateTime.now().millisecond % testMessages.length];
-    final msg = rawMsg.replaceFirst("REPLACEME", "TEST$random");
-
-    print("Simulating SMS: $msg");
-    ref.read(smsProvider.notifier).simulateSms(msg, "MPESA");
-  },
-)
+          // Test Data Seeder button
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.orange),
+            tooltip: 'Seed Test Transactions',
+            onPressed: () async {
+              try {
+                final db = await DatabaseHelper.instance.database;
+                final count = await TestDataSeeder.seedTestTransactions(db);
+                
+                ref.invalidate(txProv);
+                ref.invalidate(plansProvider);
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Successfully added $count test transactions!',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error seeding data: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          )
         ],
       ),
       body: Column(

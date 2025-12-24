@@ -1,10 +1,12 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/providers/categories_provider.dart';
 import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
+import 'package:ba_102_fe/services/icon_service.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:ba_102_fe/data/models/models.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 
 class CategoryDetailsPage extends StatelessWidget {
   final Category category;
@@ -64,11 +66,14 @@ class CategoryDetailsPage extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                if (category.id == -1) // Uncategorized
-                                  IconButton(
-                                    icon: const Icon(Icons.drive_file_move_outlined, color: Colors.orange),
-                                    onPressed: () => _showMoveDialog(context, tx),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.drive_file_move_outlined, 
+                                    color: category.id == -1 ? Colors.orange : Colors.blue.shade300,
+                                    size: 20,
                                   ),
+                                  onPressed: () => _showMoveDialog(context, tx),
+                                ),
                               ],
                             ),
                           ),
@@ -105,36 +110,121 @@ class CategorySelectionDialog extends ConsumerWidget {
         child: categoriesAsync.when(
           data: (categories) {
             final validCategories = categories.where((c) => c.id != -1).toList();
+            final parents = validCategories.where((c) => c.parentId == null).toList();
+            final List<Category> sortedList = [];
+            for (var p in parents) {
+              sortedList.add(p);
+              sortedList.addAll(validCategories.where((c) => c.parentId == p.id));
+            }
+
             return ListView.builder(
               shrinkWrap: true,
-              itemCount: validCategories.length,
+              itemCount: sortedList.length,
               itemBuilder: (context, index) {
-                final cat = validCategories[index];
+                final cat = sortedList[index];
+                final isChild = cat.parentId != null;
+
                 return ListTile(
-                  title: Text(cat.name),
+                  dense: isChild,
+                  contentPadding: EdgeInsets.only(left: isChild ? 32 : 16, right: 16),
+                  leading: Icon(
+                    IconService.getIcon(cat.icon, cat.name),
+                    size: isChild ? 18 : 22,
+                    color: isChild ? Colors.grey.shade400 : Colors.blue.shade700,
+                  ),
+                  title: Text(
+                    cat.name,
+                    style: TextStyle(
+                      fontWeight: isChild ? FontWeight.normal : FontWeight.bold,
+                      fontSize: isChild ? 14 : 15,
+                      color: isChild ? Colors.black87 : Colors.black,
+                    ),
+                  ),
                   onTap: () async {
                     final db = await DatabaseHelper.instance.database;
+                    final vendor = transaction.vendor;
+                    
+                    bool shouldPop = false;
 
-                    // 1. Update the transaction
-                    await db.update(
-                      'transactions',
-                      {'category_id': cat.id},
-                      where: 'id = ?',
-                      whereArgs: [transaction.id],
-                    );
-
-                    // 2. Save the vendor mapping for future auto-categorization
-                    if (transaction.vendor != null) {
-                      await CategorizationService().saveVendorMapping(
-                        transaction.vendor!,
-                        cat.id,
+                    if (vendor != null && vendor.isNotEmpty) {
+                      final result = await db.rawQuery(
+                        'SELECT COUNT(*) as count FROM transactions WHERE vendor = ? AND (category_id != ? OR category_id IS NULL) AND id != ?',
+                        [vendor, cat.id, transaction.id],
                       );
+                      int otherCount = sqflite.Sqflite.firstIntValue(result) ?? 0;
+
+                      if (otherCount > 0) {
+                        if (!context.mounted) return;
+                        final bool? applyToAll = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            title: const Text('Apply to all?'),
+                            content: Text('We found $otherCount other transactions from "$vendor". Do you want to move all of them to "${cat.name}"?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text('JUST THIS ONE', style: TextStyle(color: Colors.grey.shade600)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('MOVE ALL', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (applyToAll == null) return; // User dismissed dialog
+
+                        if (applyToAll) {
+                          await db.update(
+                            'transactions',
+                            {'category_id': cat.id},
+                            where: 'vendor = ?',
+                            whereArgs: [vendor],
+                          );
+                        } else {
+                          await db.update(
+                            'transactions',
+                            {'category_id': cat.id},
+                            where: 'id = ?',
+                            whereArgs: [transaction.id],
+                          );
+                        }
+                        shouldPop = true;
+                      } else {
+                        await db.update(
+                          'transactions',
+                          {'category_id': cat.id},
+                          where: 'id = ?',
+                          whereArgs: [transaction.id],
+                        );
+                        shouldPop = true;
+                      }
+                      
+                      // Always save the mapping for future transactions
+                      await CategorizationService().saveVendorMapping(vendor, cat.id);
+                    } else {
+                      // No vendor, just update this one
+                      await db.update(
+                        'transactions',
+                        {'category_id': cat.id},
+                        where: 'id = ?',
+                        whereArgs: [transaction.id],
+                      );
+                      shouldPop = true;
                     }
 
-                    ref.invalidate(categoriesProvider);
-                    ref.invalidate(txProv);
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back to categories page to refresh
+                    if (shouldPop && context.mounted) {
+                      ref.invalidate(categoriesProvider);
+                      ref.invalidate(txProv);
+                      Navigator.pop(context); // Close selection dialog
+                      Navigator.pop(context); // Go back to categories page
+                    }
                   },
                 );
               },

@@ -50,12 +50,23 @@ class CategoryLs {
   }
 
   Future<void> deleteCategory(int id) async {
+    // 1. Promote children to top-level categories
+    await db.update(
+      'budget_category',
+      {'parent_id': null},
+      where: 'parent_id = ?',
+      whereArgs: [id],
+    );
+
+    // 2. Move transactions to Uncategorized
     await db.update(
       'transactions',
       {'category_id': null},
       where: 'category_id = ?',
       whereArgs: [id],
     );
+
+    // 3. Delete the category
     await db.delete(
       'budget_category',
       where: 'id = ?',
