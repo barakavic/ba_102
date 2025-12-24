@@ -29,3 +29,19 @@
     - Implemented robust `onUpgrade` logic to handle schema migrations.
   - **Fix**: Improved SMS parsing regex to handle non-hyphenated "MPESA" messages and case-insensitive sender matching.
   - **UX**: Added snackbar notifications for newly captured SMS transactions.
+
+## version 1.3.0+5
+- **Frontend**: Flutter - Version 1.3.0+5
+- **Changes**:
+  - **Feature**: Enhanced Plan Details Dashboard.
+    - Added **Daily Insights**: Real-time calculation of "Avg. Daily Spend" and "Safe Daily Spend" (Total Remaining / Days Left).
+    - Added **Frequent Spending**: Horizontal habit tracker identifying recurring vendors and total accumulated cost.
+    - Added **Category Analytics**: Toggle between List view and a custom-painted **Donut Chart** with color-coded legends.
+    - Added **Expandable Top Transactions**: Shows the top 2 "budget killers" with a **Budget Impact Badge** (% of total budget).
+  - **UX**: Implemented **Pull-to-Refresh** on Plans, Plan Details, and Categories pages.
+    - Integrated automatic **Re-categorization** into the refresh action to fix "Uncategorized" transactions using the latest rules.
+  - **Logic**: 
+    - Normalized plan dates to cover the full day (00:00:00 to 23:59:59).
+    - Restricted editing of Plan Limits and Start Dates for active plans to ensure data integrity.
+    - Filtered spending calculations to only include outbound payments and withdrawals (ignoring income).
+  - **Fix**: Ensured "Uncategorized" category is permanently visible in the UI as a primary container.
