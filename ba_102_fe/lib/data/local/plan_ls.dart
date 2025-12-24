@@ -13,7 +13,11 @@ final Database db;
   
 
   Future<void> insertPlan(Plan plan) async {
-    await db.insert('budget_plans', plan.toMap());
+    await db.insert(
+      'budget_plans', 
+      plan.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> deleteAllPlans() async{

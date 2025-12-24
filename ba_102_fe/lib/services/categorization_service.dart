@@ -51,11 +51,11 @@ class CategorizationService {
     }
 
     if (categoryName != null) {
-      // Find the ID for this category name
+      // Find the ID for this category name (case-insensitive)
       final List<Map<String, dynamic>> catMaps = await db.query(
         'budget_category',
-        where: 'name = ?',
-        whereArgs: [categoryName],
+        where: 'LOWER(name) = ?',
+        whereArgs: [categoryName.toLowerCase()],
       );
       
       if (catMaps.isNotEmpty) {
@@ -76,5 +76,33 @@ class CategorizationService {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<int> recategorizeUncategorizedTransactions() async {
+    final db = await DatabaseHelper.instance.database;
+    
+    // Find all transactions with no category
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      where: 'category_id IS NULL',
+    );
+
+    int count = 0;
+    for (var map in maps) {
+      final vendor = map['vendor'] as String?;
+      if (vendor != null) {
+        final newCatId = await getCategoryIdForVendor(vendor);
+        if (newCatId != null) {
+          await db.update(
+            'transactions',
+            {'category_id': newCatId},
+            where: 'id = ?',
+            whereArgs: [map['id']],
+          );
+          count++;
+        }
+      }
+    }
+    return count;
   }
 }

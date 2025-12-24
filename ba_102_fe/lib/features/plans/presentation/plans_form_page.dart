@@ -14,21 +14,30 @@ final addPlanProvider = Provider ((ref){
   };
 });
 
-class PlansFormPage extends ConsumerStatefulWidget{
-  const PlansFormPage({super.key});
+class PlansFormPage extends ConsumerStatefulWidget {
+  final Plan? plan;
+  const PlansFormPage({super.key, this.plan});
 
   @override
   ConsumerState<PlansFormPage> createState() => _PlansFormPageState();
-
 }
 
 class _PlansFormPageState extends ConsumerState<PlansFormPage> {
+  late final TextEditingController nameCtrl;
+  late final TextEditingController limitCtrl;
+  late String selectedType;
+  late DateTime start;
+  late DateTime end;
 
-  final nameCtrl = TextEditingController();
-  final limitCtrl = TextEditingController();
-  String selectedType = 'monthly';
-  DateTime start = DateTime.now();
-  DateTime end = DateTime.now().add(const Duration(days: 30));
+  @override
+  void initState() {
+    super.initState();
+    nameCtrl = TextEditingController(text: widget.plan?.name ?? '');
+    limitCtrl = TextEditingController(text: widget.plan?.limitAmount.toString() ?? '');
+    selectedType = widget.plan?.planType ?? 'monthly';
+    start = widget.plan?.startDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    end = widget.plan?.endDate ?? DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 23, 59, 59);
+  }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
@@ -50,13 +59,29 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
       },
     );
     if (picked != null) {
+      if (isStart && widget.plan != null) {
+        final now = DateTime.now();
+        final planStart = widget.plan!.startDate;
+        if (now.isAfter(planStart) || now.isAtSameMomentAs(planStart)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Cannot change start date: This plan has already started."),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
       setState(() {
         if (isStart) {
-          start = picked;
+          start = DateTime(picked.year, picked.month, picked.day, 0, 0, 0);
           // Auto-adjust end date based on type if not custom
           _updateEndDate();
         } else {
-          end = picked;
+          end = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
           selectedType = 'custom';
         }
       });
@@ -65,14 +90,19 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
 
   void _updateEndDate() {
     if (selectedType == 'weekly') {
-      end = start.add(const Duration(days: 7));
+      end = start.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
     } else if (selectedType == 'monthly') {
-      end = start.add(const Duration(days: 30));
+      end = start.add(const Duration(days: 29, hours: 23, minutes: 59, seconds: 59));
     } else if (selectedType == 'quarterly') {
-      end = start.add(const Duration(days: 90));
+      end = start.add(const Duration(days: 89, hours: 23, minutes: 59, seconds: 59));
     } else if (selectedType == 'yearly') {
-      end = start.add(const Duration(days: 365));
+      end = start.add(const Duration(days: 364, hours: 23, minutes: 59, seconds: 59));
     }
+  }
+
+  bool get _isLimitInvalid {
+    final val = double.tryParse(limitCtrl.text.trim());
+    return val != null && val < 0;
   }
 
   @override
@@ -80,7 +110,7 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('New Budget Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.plan == null ? 'New Budget Plan' : 'Edit Plan', style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -96,15 +126,17 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4B0082), Color(0xFF8A2BE2)],
+                gradient: LinearGradient(
+                  colors: _isLimitInvalid 
+                    ? [Colors.red.shade800, Colors.red.shade400]
+                    : [const Color(0xFF4B0082), const Color(0xFF8A2BE2)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4B0082).withOpacity(0.3),
+                    color: (_isLimitInvalid ? Colors.red : const Color(0xFF4B0082)).withOpacity(0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
@@ -128,6 +160,14 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
                     "KES ${limitCtrl.text.isEmpty ? '0' : limitCtrl.text}",
                     style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
                   ),
+                  if (_isLimitInvalid)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        "⚠️ Limit cannot be negative",
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -150,8 +190,33 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
                 icon: Icons.account_balance_wallet,
                 hint: "0.00",
                 isNumber: true,
+                readOnly: widget.plan != null,
+                error: _isLimitInvalid ? "Invalid limit" : (widget.plan != null ? "Limits cannot be changed after creation" : null),
                 onChanged: (v) => setState(() {}),
               ),
+              if (widget.plan == null) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  "Recommended Limits:",
+                  style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [5000, 10000, 20000, 50000].map((amount) {
+                    return ActionChip(
+                      label: Text("KES ${amount ~/ 1000}k"),
+                      labelStyle: const TextStyle(fontSize: 11, color: Color(0xFF4B0082)),
+                      backgroundColor: const Color(0xFF4B0082).withOpacity(0.05),
+                      onPressed: () {
+                        setState(() {
+                          limitCtrl.text = amount.toString();
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
             ]),
 
             const SizedBox(height: 25),
@@ -187,7 +252,22 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
                 title: const Text("Start Date", style: TextStyle(fontSize: 14)),
                 subtitle: Text(start.toLocal().toIso8601String().substring(0, 10)),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _selectDate(context, true),
+                onTap: () {
+                  if (widget.plan != null) {
+                    final now = DateTime.now();
+                    final planStart = widget.plan!.startDate;
+                    if (now.isAfter(planStart) || now.isAtSameMomentAs(planStart)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Cannot change start date: This plan has already started."),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                  }
+                  _selectDate(context, true);
+                },
               ),
               const Divider(),
               ListTile(
@@ -205,7 +285,7 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: () async {
+                onPressed: _isLimitInvalid ? null : () async {
                   if (nameCtrl.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Please enter a plan name")),
@@ -213,11 +293,11 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
                     return;
                   }
                   final plan = Plan(
-                    id: 0,
+                    id: widget.plan?.id ?? 0,
                     name: nameCtrl.text.trim(),
                     startDate: start,
                     endDate: end,
-                    status: "ACTIVE",
+                    status: widget.plan?.status ?? "ACTIVE",
                     limitAmount: double.tryParse(limitCtrl.text.trim()) ?? 0.0,
                     planType: selectedType,
                   );
@@ -227,12 +307,12 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4B0082),
+                  backgroundColor: _isLimitInvalid ? Colors.grey : const Color(0xFF4B0082),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 5,
                 ),
-                child: const Text("CREATE PLAN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                child: Text(widget.plan == null ? "CREATE PLAN" : "UPDATE", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
               ),
             ),
             const SizedBox(height: 20),
@@ -262,7 +342,7 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
           BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
-      child: Column(children: children),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 
@@ -271,19 +351,23 @@ class _PlansFormPageState extends ConsumerState<PlansFormPage> {
     required String label,
     required IconData icon,
     String? hint,
+    String? error,
     bool isNumber = false,
+    bool readOnly = false,
     Function(String)? onChanged,
   }) {
     return TextField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      readOnly: readOnly,
+      keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true, signed: true) : TextInputType.text,
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF4B0082)),
+        errorText: error,
+        prefixIcon: Icon(icon, color: error != null ? Colors.red : const Color(0xFF4B0082)),
         border: InputBorder.none,
-        labelStyle: const TextStyle(fontSize: 14),
+        labelStyle: TextStyle(fontSize: 14, color: error != null ? Colors.red : null),
       ),
     );
   }

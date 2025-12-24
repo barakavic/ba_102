@@ -31,14 +31,12 @@ class CategoryLs {
       where: 'category_id IS NULL',
     );
 
-    if (uncategorizedTxMaps.isNotEmpty) {
-      final uncategorizedTransactions = uncategorizedTxMaps.map((m) => Transaction.fromMap(m)).toList();
-      categories.add(Category(
-        id: -1, // Special ID for Uncategorized
-        name: 'Uncategorized',
-        transactions: uncategorizedTransactions,
-      ));
-    }
+    final uncategorizedTransactions = uncategorizedTxMaps.map((m) => Transaction.fromMap(m)).toList();
+    categories.add(Category(
+      id: -1, // Special ID for Uncategorized
+      name: 'Uncategorized',
+      transactions: uncategorizedTransactions,
+    ));
 
     return categories;
   }
