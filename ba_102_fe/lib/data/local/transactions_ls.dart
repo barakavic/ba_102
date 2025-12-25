@@ -145,4 +145,29 @@ class TransactionsLs {
   Future<void> deleteAllTransactions() async{
     await db.delete('transactions');
   }
+
+  Future<double?> getLatestMpesaBalance() async {
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      columns: ['balance'],
+      where: 'balance IS NOT NULL AND balance > 0',
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['balance'] as double?;
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getMpesaBalanceHistory({int limit = 30}) async {
+    return await db.query(
+      'transactions',
+      columns: ['date', 'balance'],
+      where: 'balance IS NOT NULL AND balance > 0',
+      orderBy: 'date ASC', // ASC for chart plotting
+      limit: limit,
+    );
+  }
+
 }
