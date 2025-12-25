@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:ba_102_fe/features/dashboard/presentation/widgets/spending_pulse_chart.dart';
 
 class GlassHeroCard extends ConsumerWidget {
   const GlassHeroCard({super.key});
@@ -122,7 +123,8 @@ class GlassHeroCard extends ConsumerWidget {
                       ),
                       error: (_, __) => const Text('Error', style: TextStyle(color: Colors.white)),
                     ),
-
+                    const SizedBox(height: 16),
+                    const SpendingPulseChart(),
                   ],
                 ),
               ),
