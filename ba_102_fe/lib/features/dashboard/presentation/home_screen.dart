@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ba_102_fe/features/dashboard/presentation/widgets/glass_hero_card.dart';
 
 class HomeScreen extends ConsumerWidget{
   const HomeScreen({super.key});
@@ -12,7 +13,7 @@ class HomeScreen extends ConsumerWidget{
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(
-          // child: BudgetSummary()
+          child: GlassHeroCard(),
         ),
         const SliverToBoxAdapter(
           // child: SpendingGraph(),
