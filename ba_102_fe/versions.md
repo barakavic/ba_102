@@ -70,3 +70,23 @@
     - Debug button now seeds 40+ diverse transactions (Food, Utilities, Transport) for testing.
   - **Roadmap**:
     - Established internal strategic roadmap for future development.
+
+## version 1.5.0+7
+- **Frontend**: Flutter - Version 1.5.0+7
+- **Major Features**:
+  - **"Clarity & Insight" Dashboard**:
+    - Refactored the main screen to prioritize high-level financial status.
+    - Added **Total Spending Header**: Dynamic monthly spending summary with privacy support.
+    - Added **Monthly Budget Summary**: Visual "Reality Check" comparing spent vs. income.
+    - Added **Top Categories Row**: Highlights top 5 spending areas for the month.
+    - Integrated **Spending Pulse Chart** into the GlassHeroCard.
+  - **Overhauled Transactions Page**:
+    - Extracted `TransactionDetailsView` for modularity.
+    - Implemented **Date Grouping** (Today, Yesterday, etc.) for better readability.
+    - Added **Pill-Style Category Filters** (Food, Shopping, Travel, Bills).
+    - Implemented **Smart Month/Year Navigation**: Dropdown with "This Month", "Last Month", and historical months.
+    - Added **Multi-Criteria Sorting**: Order by Date (Newest/Oldest) or Amount (Highest/Lowest).
+  - **UX & Design**:
+    - Implemented **Privacy Mode** across all dashboard widgets (hides sensitive amounts).
+    - Refined glassmorphism aesthetics and typography.
+    - Cleaned up `TransactionsPage` code by removing 300+ lines of redundant logic.
