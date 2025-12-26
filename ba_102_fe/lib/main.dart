@@ -22,7 +22,7 @@ class BudgetingApp extends StatelessWidget {
     return MaterialApp(
       title: 'Budgeting App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple.shade700),
         useMaterial3: true,
       ),
       home: const MainNavigation(),

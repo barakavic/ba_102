@@ -1,16 +1,35 @@
 
 class Transaction{
-  final int id;
-  final double amount;
-  final String description;
-  final DateTime date;
+  final int? id;
+  final double? amount;
+  final String? description;
+  final DateTime? date;
+  final int? categoryId;
+  final int? planId;
+  final String type;
+  final String? vendor;
+  final String? mpesaReference;
+  final double? balance;
+  final String? rawSmsMessage;
+
 
   Transaction({
-    required this.id,
-    required this.amount,
-    required this.description,
-    required this.date,
+    this.id,
+    this.amount,
+    this.description,
+    this.date,
+    this.categoryId,
+    this.planId,
+    this.balance,
+    this.mpesaReference,
+    this.rawSmsMessage,
+    this.type = 'outbound',
+    this.vendor,
+
+
   });
+
+  
 
 // API deserialization
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
@@ -18,6 +37,14 @@ class Transaction{
   amount: (json['amount']as num?)?.toDouble() ?? 0.0, 
   description: json['description'] ?? '',
   date: DateTime.parse(json['date']),
+  categoryId: json['categoryId'],
+  planId: json['plan_id'],
+  balance: json['balance'] ?? 0,
+  rawSmsMessage: json['raw_sms_message'] as String?,
+  type: json['type'],
+  vendor: json['vendor'],
+  mpesaReference: json['mpesa_reference']
+
    );
 
   //  Local DB mapping
@@ -25,96 +52,129 @@ class Transaction{
     'id': id,
     'amount': amount,
     'description': description,
-    'date': date.toIso8601String(),
+    'date': date?.toIso8601String(),
+    'category_id': categoryId,
+    'plan_id': planId,
+    'type': type,
+    'vendor': vendor,
+    'mpesa_reference': mpesaReference,
+    'balance': balance,
+    'raw_sms_message': rawSmsMessage
   };
 
   factory Transaction.fromMap(Map<String, dynamic> map)=>Transaction(
   id: map['id'], 
   amount: (map['amount']as num ?)?.toDouble() ?? 0.0, 
   description: map['description'] ?? '', 
-  date: DateTime.parse(map['date']));
+  date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+  categoryId: map['category_id'] as int?,
+  planId: map['plan_id'] as int?,
+  type: map['type'] as String? ?? 'outbound',
+  vendor: map['vendor'] as String?,
+  mpesaReference: map['mpesa_reference'] as String?,
+  balance: map['balance'] as double?,
+  rawSmsMessage: map['raw_sms_message'] as String?,
+  );
 
-  
+  Transaction copyWith({
+    int? id,
+    String? description,
+    double? amount,
+    DateTime? date,
+    int? categoryId,
+    int? planId,
+    String? type,
+    String? vendor,
+    String? mpesaReference,
+    double? balance,
+    String? rawSmsMessage,
+
+
+  }){
+    return Transaction(
+    id: id??this.id, 
+    amount: amount ?? this.amount, 
+    description: description?? this.description, 
+    date: date?? this.date,
+    categoryId: categoryId ?? this.categoryId,
+    planId: planId ?? this.planId,
+    type: type ?? this.type,
+    vendor: vendor ?? this.vendor,
+    mpesaReference: mpesaReference ?? this.mpesaReference,
+    balance: balance ?? this.balance,
+    rawSmsMessage: rawSmsMessage ?? this.rawSmsMessage
+    );
+  }
 }
 
 class Category{
   final int id;
   final String name;
   final double limitAmount;
-  final double spentAmount;
-  final String status;
-  final int planId;
+  final String? icon;
+  final String? color;
+  final int? parentId;
   final List<Transaction> transactions;
 
   Category({
     required this.id,
-    required this.limitAmount,
-    required this.spentAmount,
     required this.name,
-    required this.status,
-    required this.planId,
+    this.limitAmount = 0.0,
+    this.icon,
+    this.color,
+    this.parentId,
     required this.transactions,
-    
   });
 
-  Category copyWith({
-  int? id,
-  String? name,
-  double? limitAmount,
-  double? spentAmount,
-  String? status,
-  int? planId,
-  List<Transaction>? transactions,
-}) {
-  return Category(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    limitAmount: limitAmount ?? this.limitAmount,
-    spentAmount: spentAmount ?? this.spentAmount,
-    status: status ?? this.status,
-    planId: planId ?? this.planId,
-    transactions: transactions ?? this.transactions,
-  );
-}
-
-  // API deserializaton
-  factory Category.fromJson(
-    Map<String, dynamic> json
-  ) => Category(id: json['id'],
-   limitAmount: (json['limitAmount'] as num?)?.toDouble() ?? 0, 
-  spentAmount: (json['spentAmount'] as num?)?.toDouble() ?? 0, 
-  name: json['name']?? '', 
-  status: json['status']?? 'NORMAL', 
-  planId: json['planId'],
-  transactions: (json['transactions'] as List<dynamic>?)?.
-  map((e)=>Transaction.
-  fromJson(e)).toList()??[],
+  factory Category.fromJson(Map<String, dynamic> json) => Category(
+    id: json['id'], 
+    name: json['name'], 
+    limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    icon: json['icon'] as String?,
+    color: json['color'] as String?,
+    parentId: json['parent_id'] as int?,
+    transactions: (json['transactions'] as List?)?.map((t) => Transaction.fromJson(t)).toList() ?? [],
   );
 
-  // Local DB Mapping
-  Map<String, dynamic> toMap()=>{
-    'id':id,
-    'name':name,
-    'limit_amount':limitAmount,
-    'spent_amount': spentAmount,
-    'status': status,
-    'planId': planId,
+  Map<String, dynamic> toMap() => {
+    if (id != 0) 'id': id,
+    'name': name,
+    'limit_amount': limitAmount,
+    'icon': icon,
+    'color': color,
+    'parent_id': parentId,
   };
 
   factory Category.fromMap(Map<String, dynamic> map) => Category(
-    id: map['id'] != null ? map['id'] as int : 0, 
-    limitAmount: (map['limitAmount'] as num?)?.toDouble() ?? 0.0, 
-    spentAmount: (map['spentAmount'] as num?)?.toDouble() ?? 0.0, 
+    id: map['id'] as int, 
     name: map['name'] ?? '', 
-    status: map['status'] ?? 'NORMAL',
-    planId: map['planId'] != null ? map['plan_id'] as int: 0, 
+    limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    icon: map['icon'] as String?,
+    color: map['color'] as String?,
+    parentId: map['parent_id'] as int?,
     transactions: const[],
+  );
+
+  Category copyWith({
+    int? id,
+    String? name,
+    double? limitAmount,
+    String? icon,
+    String? color,
+    int? parentId,
+    List<Transaction>? transactions,
+  }) {
+    return Category(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      limitAmount: limitAmount ?? this.limitAmount,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      parentId: parentId ?? this.parentId,
+      transactions: transactions ?? this.transactions,
     );
-
-    
- 
+  }
 }
-
 
 class Plan {
   final int id;
@@ -122,66 +182,46 @@ class Plan {
   final DateTime startDate;
   final DateTime endDate;
   final String status;
-  final bool isSynced;
-  final DateTime? lastModified;
-  final List<Category> categories;
-  final List<Transaction> transactions;
+  final double limitAmount;
+  final String planType;
 
+  Plan({
+    required this.id,
+    required this.name,
+    required this.startDate,
+    required this.endDate,
+    required this.status,
+    this.limitAmount = 0.0,
+    this.planType = 'monthly',
+  });
 
-Plan({
-  required this.id,
-  required this.name,
-  required this.startDate,
-  required this.endDate,
-  required this.status,
-  this.isSynced = true,
-  this.lastModified,
-  required this.categories,
-  required this.transactions,
-});
-// API Deserialization
-factory Plan.fromJson(Map<String, dynamic> json) =>Plan(
-  id: json['id'], 
-  name: json['name'], 
-  startDate: (DateTime.parse(json['start_date'])), 
-  endDate: (DateTime.parse(json['end_date'])), 
-  status: json['status'] ?? 'ACTIVE', 
-  lastModified: json['last_modified'] != null 
-  ? DateTime.parse(json['last_modified']) : null,
-
-  categories: (json['categories'] as List<dynamic> ?)
-  ?.map((e) => Category.fromJson(e)).
-  toList() ?? [],
-  transactions: (json['transactions'] as List<dynamic>?)
-  ?.map((e) => Transaction
-  .fromJson(e))
-  .toList() ?? [],
+  factory Plan.fromJson(Map<String, dynamic> json) => Plan(
+    id: json['id'], 
+    name: json['name'], 
+    startDate: DateTime.parse(json['start_date']), 
+    endDate: DateTime.parse(json['end_date']), 
+    status: json['status'] ?? 'ACTIVE', 
+    limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    planType: json['plan_type'] ?? 'monthly',
   );
-  
 
-  
-
-
-  Map<String, dynamic> toMap() =>{
-    'id': id,
+  Map<String, dynamic> toMap() => {
+    if (id != 0) 'id': id,
     'name': name,
-    'start_date':startDate.toIso8601String(),
-    'end_date':endDate.toIso8601String(),
+    'start_date': startDate.toIso8601String(),
+    'end_date': endDate.toIso8601String(),
     'status': status,
-    'is_synced': isSynced ? 1 : 0,
-    'last_modified': (lastModified ?? DateTime.now()).toIso8601String()
+    'limit_amount': limitAmount,
+    'plan_type': planType,
   };
 
-  factory Plan.fromMap(Map<String,dynamic> map) => Plan(
-  id: map['id'], 
-  name: map['name'], 
-  startDate: DateTime.parse(map['start_date']), 
-  endDate: DateTime.parse(map['end_date']), 
-  status: map['status'] ?? 'ACTIVE', 
-  isSynced: (map['is_synced' ] ?? 1) == 1,
-  lastModified: map['last_modified'] != null
-  ?DateTime.parse(map['last_modified']):null,
-  categories: const[],
-   transactions: const[],
-   );
+  factory Plan.fromMap(Map<String, dynamic> map) => Plan(
+    id: map['id'], 
+    name: map['name'], 
+    startDate: DateTime.parse(map['start_date']), 
+    endDate: DateTime.parse(map['end_date']), 
+    status: map['status'] ?? 'ACTIVE', 
+    limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
+    planType: map['plan_type'] ?? 'monthly',
+  );
 }

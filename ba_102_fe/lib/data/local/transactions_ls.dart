@@ -6,19 +6,168 @@ class TransactionsLs {
   final Database db;
   TransactionsLs(this.db);
 
+   Future<int> insertTransaction(Transaction transaction) async{
+    try{
+      if(transaction.mpesaReference !=null){
+        final existing = await db.query(
+          'transactions',
+          where: 'mpesa_reference = ?',
+          whereArgs: [transaction.mpesaReference],
+        );
+
+        if(existing.isNotEmpty){
+          print('Duplicate m-pesa transaction: ${transaction.mpesaReference}');
+          return existing.first['id'] as int;
+        }
+      }
+
+    final id = await db.insert(
+    'transactions', 
+    transaction.toMap(), 
+    conflictAlgorithm: ConflictAlgorithm.replace
+    );
+
+    return id;
+    }
+    catch(e){
+      print('insertTransaction Error: $e');
+      rethrow;
+    }
+ }
+
+
   Future<List<Transaction>> getTransactions()async{
-    final List<Map<String, dynamic>> maps = await db.query('transactions');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      orderBy: 'date DESC',
+      );
 
-    return maps.map((map) => Transaction.fromMap(map)).toList();
+    return List.generate(maps.length, (i){
+      return Transaction.fromMap((maps[i]));
+    });
+  }
+
+  Future<List<Transaction>> getTransactionsByCategory(int categoryId) async{
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      where: 'category_id = ?',
+      whereArgs: [categoryId],
+      orderBy: 'date DESC',
+    );
+    return List.generate(maps.length, (i){
+      return Transaction.fromMap(maps[i]);
+    });
+  } 
+
+  Future<List<Transaction>> getTransactionsByPlan(int planId) async{
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      where: 'plan_id = ?',
+      whereArgs: [planId],
+      orderBy: 'date DESC'
+    );
+    return List.generate(maps.length, (i){
+      return Transaction.fromMap(maps[i]);
+    });
 
   }
 
-  Future<void> insertTransaction(Transaction transaction) async{
-    await db.insert('transactions', transaction.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  Future<List<Transaction>> getTransactionByType(String type) async{
+    final List<Map<String, dynamic>> maps= await db.query(
+      'transactions',
+      where: 'type = ?',
+      whereArgs: [type],
+      orderBy: 'date DESC',
+    );
+
+    return List.generate(maps.length, (i){
+      return Transaction.fromMap(maps[i]);
+    });
+
+    
 
   }
+
+  Future<List<Transaction>> getUncategorizedTransaction() async{
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      where: 'mpesa_reference IS NOT NULL AND category_id IS NULL',
+      orderBy: 'date DESC',
+
+    );
+    return List.generate(maps.length, (i){
+      return Transaction.fromMap(maps[i]);
+    });
+  }
+
+  Future<int> updateTransaction(Transaction transaction) async{
+    return await db.update(
+      'transactions', 
+      transaction.toMap(),
+      where: 'id = ?',
+      whereArgs: [transaction.id]);
+  }
+  
+  Future<double> getTtlSpendPerPlan(int planId) async{
+    final result = await db.rawQuery('''
+      SELECT SUM(amount) as total
+      FROM transactions
+      WHERE plan_id = ? AND TYPE = 'outbound'
+
+  ''' [planId]);
+
+  return (result.first['total'] as double?) ?? 0.0;
+  }
+  
+  Future<int> deleteTransaction(int id) async{
+    return await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+  
+  Future<double> getTtlIncomePerPlan(int planId) async{
+    final result = await db.rawQuery(
+      '''
+    SELECT SUM(amount) AS total
+    FROM transactions
+    WHERE plan_id = ? AND type = 'inbound' 
+    ''',
+    [planId]
+    );
+
+
+    return (result.first['total'] as double?) ?? 0.0;
+  }
+
 
   Future<void> deleteAllTransactions() async{
     await db.delete('transactions');
   }
+
+  Future<double?> getLatestMpesaBalance() async {
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      columns: ['balance'],
+      where: 'balance IS NOT NULL AND balance > 0',
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['balance'] as double?;
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getMpesaBalanceHistory({int limit = 30}) async {
+    return await db.query(
+      'transactions',
+      columns: ['date', 'balance'],
+      where: 'balance IS NOT NULL AND balance > 0',
+      orderBy: 'date ASC', // ASC for chart plotting
+      limit: limit,
+    );
+  }
+
 }
