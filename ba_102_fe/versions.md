@@ -90,3 +90,21 @@
     - Implemented **Privacy Mode** across all dashboard widgets (hides sensitive amounts).
     - Refined glassmorphism aesthetics and typography.
     - Cleaned up `TransactionsPage` code by removing 300+ lines of redundant logic.
+
+## version 1.6.0+8
+- **Frontend**: Flutter - Version 1.6.0+8
+- **Major Features**:
+  - **Global Navigation Shell**:
+    - Centralized the `AppBar` logic into `MainNavigation` for a persistent UI experience.
+    - Implemented a **Global Navigation Drawer** ("Command Center") accessible from all main screens.
+    - Added a **Global Privacy Mode Toggle** within the drawer for instant balance masking.
+  - **Dynamic Dashboard**:
+    - Implemented **Pull-to-Refresh** on the Home Screen to force-update M-Pesa balances and charts.
+    - Integrated real-time provider invalidation: Dashboard now updates automatically when new SMS transactions are detected.
+- **UX & Design**:
+    - **Consolidated UI**: Removed redundant internal AppBars from Dashboard, Transactions, and Settings pages.
+    - **SMS Status Migration**: Moved the SMS listening status and transaction count badge to the global AppBar for better visibility.
+    - **Visual Fixes**: Resolved `GlassHeroCard` layout overflows and enhanced `SpendingPulseChart` line visibility.
+- **Fixes**:
+    - Fixed a critical issue where `MainNavigation` could not be instantiated as a `const` due to the `GlobalKey` requirement.
+    - Restored missing historical sync methods in `SmsNotifier` and `SmsListenerService`.
