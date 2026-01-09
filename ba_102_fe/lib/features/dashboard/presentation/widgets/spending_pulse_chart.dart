@@ -64,15 +64,20 @@ class SpendingPulseChart extends ConsumerWidget {
                 LineChartBarData(
                   spots: spots,
                   isCurved: true,
-                  color: Colors.white.withOpacity(0.5),
-                  barWidth: 2,
+                  color: Colors.white, // Solid white for maximum visibility
+                  barWidth: 3, // Slightly thicker
                   isStrokeCapRound: true,
                   dotData: const FlDotData(show: false),
+                  shadow: const Shadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
                   belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.white.withOpacity(0.2),
+                        Colors.white.withOpacity(0.3),
                         Colors.white.withOpacity(0.0),
                       ],
                       begin: Alignment.topCenter,

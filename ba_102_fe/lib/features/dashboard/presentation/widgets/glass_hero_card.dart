@@ -14,7 +14,7 @@ class GlassHeroCard extends ConsumerWidget {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      height: 200,
+      height: 230,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(

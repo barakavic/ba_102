@@ -25,7 +25,7 @@ class BudgetingApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple.shade700),
         useMaterial3: true,
       ),
-      home: const MainNavigation(),
+      home: MainNavigation(),
     );
   }
 }

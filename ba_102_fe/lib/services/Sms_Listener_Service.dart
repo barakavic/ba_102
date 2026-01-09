@@ -35,6 +35,19 @@ class SmsListenerService {
 
 
 
+    Future<List<Map<String, dynamic>>> fetchHistoricalMessages({DateTime? since}) async {
+      try {
+        final int? sinceTimestamp = since?.millisecondsSinceEpoch;
+        final List<dynamic> result = await platform.invokeMethod('fetchOldSms', {
+          'since': sinceTimestamp,
+        });
+        return result.map((e) => Map<String, dynamic>.from(e)).toList();
+      } on PlatformException catch (e) {
+        print("Failed to fetch historical SMS: ${e.message}");
+        return [];
+      }
+    }
+
     void dispose(){
       platform.setMethodCallHandler(null);
     }

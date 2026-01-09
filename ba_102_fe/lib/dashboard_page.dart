@@ -7,16 +7,6 @@ class DashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Total Budget'),
-          actions: [
-            IconButton(onPressed: (){}, 
-            icon: const Icon(Icons.notifications_none_outlined, color: Colors.black,))
-          ],
-          automaticallyImplyLeading: false,
-      ),
-      body: const HomeScreen(),
-    );
+    return const HomeScreen();
   }
 }

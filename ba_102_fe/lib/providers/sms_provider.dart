@@ -6,6 +6,7 @@ import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
+import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
 
 class SmsState {
   final MpesaTransaction? lastTransaction;
@@ -86,6 +87,11 @@ class SmsNotifier extends StateNotifier<SmsState> {
       await _saveToDatabase(mpesaTransaction, isSimulated: isSimulated);
 
       ref.invalidate(txProv);
+      ref.invalidate(mpesaBalanceProvider);
+      ref.invalidate(mpesaBalanceHistoryProvider);
+      ref.invalidate(monthlySummaryProvider);
+      ref.invalidate(topCategoriesProvider);
+      ref.invalidate(recentTransactionsProvider);
     }
     else{
       print('Failed to parse M-Pesa message');
@@ -181,6 +187,53 @@ class SmsNotifier extends StateNotifier<SmsState> {
       print("Error saving transaction: $e");
       state = state.copyWith(error: "Failed to save transaction : $e");
 
+    }
+  }
+  
+  Future<int> syncHistoricalMessages({DateTime? since}) async {
+    try {
+      // Default to start of current month if no date provided
+      final syncSince = since ?? DateTime(DateTime.now().year, DateTime.now().month, 1);
+      
+      final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: syncSince);
+      
+      if (oldMessages.isEmpty) return 0;
+
+      final db = await DatabaseHelper.instance.database;
+      final localService = TransactionsLs(db);
+      int newCount = 0;
+
+      for (var sms in oldMessages) {
+        final mpesaTx = _mpesaParser.parseMessage(sms['body'], sms['timestamp']);
+        
+        if (mpesaTx != null) {
+          // Check for duplicates using M-Pesa reference
+          final existing = await db.query(
+            'transactions',
+            where: 'mpesa_reference = ?',
+            whereArgs: [mpesaTx.reference],
+          );
+
+          if (existing.isEmpty) {
+            await _saveToDatabase(mpesaTx);
+            newCount++;
+          }
+        }
+      }
+
+      if (newCount > 0) {
+        ref.invalidate(txProv);
+        ref.invalidate(mpesaBalanceProvider);
+        ref.invalidate(mpesaBalanceHistoryProvider);
+        ref.invalidate(monthlySummaryProvider);
+        ref.invalidate(topCategoriesProvider);
+        ref.invalidate(recentTransactionsProvider);
+      }
+      
+      return newCount;
+    } catch (e) {
+      print("Sync Historical Messages Error: $e");
+      return 0;
     }
   }
 
