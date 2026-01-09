@@ -1,8 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    
+    <!-- SMS Listener Permissions -->
     <uses-permission android:name= "android.permission.RECEIVE_SMS"/>
     <uses-permission android:name= "android.permission.READ_SMS"/>
     
+
+    <!-- Background Running Permissions -->
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+     <uses-permission android:name="android.permission.WAKE_LOCK" />
+     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    
+     <!--Android 13+ Notifications  -->
+     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+     <!--Android 14+ Foreground Services -->
+     <uses-permission android.name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+     
     <application
         android:label="HoneyBadger"
         android:name="${applicationName}"

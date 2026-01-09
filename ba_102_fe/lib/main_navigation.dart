@@ -9,6 +9,7 @@ import 'package:ba_102_fe/utils/test_data_seeder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
+import 'dart:ui';
 
 const Color primaryColor = Color(0xFF4B0082);
 
@@ -35,6 +36,8 @@ class MainNavigation extends ConsumerWidget {
       ref.read(navIndexProvider.notifier).state = index;
     }
 
+    final smsState = ref.watch(smsProvider);
+
     return Scaffold(
       key: _scaffoldKey, // Attach the key here
       appBar: AppBar(
@@ -54,6 +57,36 @@ class MainNavigation extends ConsumerWidget {
               icon: const Icon(Icons.notifications_none_outlined, color: Colors.black),
             ),
           if (currentIndex == 1) ...[
+            // SMS Status Indicator
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  Icon(
+                    smsState.isListening ? Icons.sms : Icons.sms_failed,
+                    color: smsState.isListening ? Colors.green.shade400 : Colors.grey,
+                    size: 20,
+                  ),
+                  if (smsState.transactionCount > 0)
+                    Container(
+                      margin: const EdgeInsets.only(left: 4.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${smsState.transactionCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.history, color: primaryColor),
               onPressed: () async {
@@ -103,44 +136,22 @@ class MainNavigation extends ConsumerWidget {
           ],
         ],
       ),
-      // This is our new Global Drawer
-      drawer: Drawer(
-        child: Column(
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: primaryColor),
-              child: Center(
-                child: Text(
-                  "Command Center",
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text("App Info"),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            SwitchListTile(
-              secondary: Icon(
-                ref.watch(privacyModeProvider) ? Icons.visibility_off : Icons.visibility,
-                color: primaryColor,
-              ),
-              title: const Text("Privacy Mode"),
-              subtitle: const Text("Hide balances on screens"),
-              value: ref.watch(privacyModeProvider),
-              onChanged: (value) {
-                ref.read(privacyModeProvider.notifier).state = value;
-              },
-            ),
-            const Spacer(),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text("v1.0.2 - Financial OS", style: TextStyle(color: Colors.grey)),
-            ),
-          ],
+
+      drawer:  SizedBox(
+        width: MediaQuery.of(context).size.width * 0.40,
+        child: Drawer(
+          backgroundColor: Colors.transparent,
+          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+          
+          child: Container(
+            color: Colors.white,
+
+            
+            
+            
+            
+          ),
+          ),
         ),
       ),
       body: IndexedStack(

@@ -66,117 +66,30 @@ class TransactionsPage  extends ConsumerWidget{
 
     return DefaultTabController(
       length: 3, 
-      child: Scaffold(
-        appBar: AppBar(
-        title: const Text('Transaction'),
-        centerTitle: true,
-        actions: [
-          Padding(padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              Icon(smsState.isListening ? Icons.sms : Icons.sms_failed,
-              color: smsState.isListening ? Colors.green.shade400 : Colors.grey,
-              size: 20,
-              ),
-              if (smsState.transactionCount > 0)
-              Container(
-                margin: const EdgeInsets.only(left: 4.0),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color:  Colors.green,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${smsState.transactionCount}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-
-
-                  ),
-                ),
-              ),
-
-            ],
-          ),
-          ),
-          // In AppBar actions:
-
-          // Test Data Seeder button
-          IconButton(
-            icon: const Icon(Icons.bug_report, color: Colors.orange),
-            tooltip: 'Seed Test Transactions',
-            onPressed: () async {
-              try {
-                final db = await DatabaseHelper.instance.database;
-                final count = await TestDataSeeder.seedTestTransactions(db);
-                
-                ref.invalidate(txProv);
-                ref.invalidate(plansProvider);
-                
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Successfully added $count test transactions!',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      backgroundColor: Colors.green,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error seeding data: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          )
-        ],
-      ),
-      body: Column(
+      child: Column(
         children: <Widget>[
           const TabBar(
             labelColor: priColor,
             unselectedLabelColor: Colors.grey,
             indicatorColor: priColor,
             tabs: [
-            Tab(text: 'Transactions',),
-            Tab(text: 'Categories',),
-            Tab(text: 'Plans',),
-          ],
+              Tab(text: 'Transactions'),
+              Tab(text: 'Categories'),
+              Tab(text: 'Plans'),
+            ],
           ),
-          Expanded(child: TabBarView(children: [
-            TransactionDetailsView(
-            txAsyncValue: txAsyncValue
+          Expanded(
+            child: TabBarView(
+              children: [
+                TransactionDetailsView(txAsyncValue: txAsyncValue),
+                CategoriesPage(),
+                PlansPage(),
+              ],
             ),
-            CategoriesPage(),
-            PlansPage()
-            
-            
-          ]))
-          
-          
+          ),
         ],
       ),
-      ),
-      
-      );
+    );
       
     // throw UnimplementedError();
   }

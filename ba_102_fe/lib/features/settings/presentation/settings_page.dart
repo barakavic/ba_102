@@ -6,17 +6,11 @@ class SettingsPage extends ConsumerWidget{
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Settings"),
-        centerTitle: true,
-      ),
-
-      body: Center(
-        child: Text("Settings go here",
-        style: TextStyle(fontSize: 16.0),),
+    return const Center(
+      child: Text(
+        "Settings go here",
+        style: TextStyle(fontSize: 16.0),
       ),
     );
-    // throw UnimplementedError();
   }
 }
