@@ -170,4 +170,12 @@ class TransactionsLs {
     );
   }
 
+  Future<List<Transaction>> getUnsyncedTransactions() async {
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      where: 'is_synced = 0',
+      orderBy: 'date ASC',
+    );
+    return maps.map((m) => Transaction.fromMap(m)).toList();
+  }
 }

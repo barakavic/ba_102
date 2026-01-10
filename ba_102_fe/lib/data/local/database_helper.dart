@@ -1,6 +1,7 @@
 // import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:uuid/uuid.dart';
 // import 'package:csv/csv.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -23,7 +24,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 9,
+      version: 10,
       
     
 
@@ -79,6 +80,8 @@ CREATE TABLE transactions (
     mpesa_reference TEXT UNIQUE,
     balance REAL,
     raw_sms_message TEXT,
+    client_id TEXT UNIQUE,
+    is_synced INTEGER DEFAULT 0,
     FOREIGN KEY (category_id) REFERENCES budget_category(id),
     FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
 );
@@ -191,6 +194,24 @@ CREATE TABLE vendor_mappings (
     if (oldVersion < 9) {
       try {
         await db.execute('ALTER TABLE budget_category ADD COLUMN parent_id INTEGER');
+      } catch (_) {}
+    }
+    if (oldVersion < 10) {
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN client_id TEXT');
+        await db.execute('ALTER TABLE transactions ADD COLUMN is_synced INTEGER DEFAULT 0');
+        // Generate UUIDs for existing transactions
+        final List<Map<String, dynamic>> txs = await db.query('transactions');
+        for (var tx in txs) {
+          if (tx['client_id'] == null) {
+            await db.update(
+              'transactions',
+              {'client_id': const Uuid().v4()},
+              where: 'id = ?',
+              whereArgs: [tx['id']],
+            );
+          }
+        }
       } catch (_) {}
     }
     print('Database upgraded from $oldVersion to $newVersion');

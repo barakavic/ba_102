@@ -1,5 +1,6 @@
+import 'package:uuid/uuid.dart';
 
-class Transaction{
+class Transaction {
   final int? id;
   final double? amount;
   final String? description;
@@ -11,7 +12,8 @@ class Transaction{
   final String? mpesaReference;
   final double? balance;
   final String? rawSmsMessage;
-
+  final String? clientId; // For sync-safety
+  final bool isSynced; // Local sync status
 
   Transaction({
     this.id,
@@ -25,56 +27,59 @@ class Transaction{
     this.rawSmsMessage,
     this.type = 'outbound',
     this.vendor,
+    String? clientId,
+    this.isSynced = false,
+  }) : clientId = clientId ?? const Uuid().v4();
 
-
-  });
-
-  
-
-// API deserialization
+  // API deserialization
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
-  id: json['id'], 
-  amount: (json['amount']as num?)?.toDouble() ?? 0.0, 
-  description: json['description'] ?? '',
-  date: DateTime.parse(json['date']),
-  categoryId: json['categoryId'],
-  planId: json['plan_id'],
-  balance: json['balance'] ?? 0,
-  rawSmsMessage: json['raw_sms_message'] as String?,
-  type: json['type'],
-  vendor: json['vendor'],
-  mpesaReference: json['mpesa_reference']
+        id: json['id'],
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        description: json['description'] ?? '',
+        date: json['date'] != null ? DateTime.parse(json['date']) : null,
+        categoryId: json['categoryId'],
+        planId: json['plan_id'],
+        balance: (json['balance'] as num?)?.toDouble() ?? 0,
+        rawSmsMessage: json['raw_sms_message'] as String?,
+        type: json['type'] ?? 'outbound',
+        vendor: json['vendor'],
+        mpesaReference: json['mpesa_reference'],
+        clientId: json['clientId'] ?? json['client_id'],
+        isSynced: true, // If it comes from API, it's synced
+      );
 
-   );
+  // Local DB mapping
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'amount': amount,
+        'description': description,
+        'date': date?.toIso8601String(),
+        'category_id': categoryId,
+        'plan_id': planId,
+        'type': type,
+        'vendor': vendor,
+        'mpesa_reference': mpesaReference,
+        'balance': balance,
+        'raw_sms_message': rawSmsMessage,
+        'client_id': clientId,
+        'is_synced': isSynced ? 1 : 0,
+      };
 
-  //  Local DB mapping
-  Map<String, dynamic> toMap()=>{
-    'id': id,
-    'amount': amount,
-    'description': description,
-    'date': date?.toIso8601String(),
-    'category_id': categoryId,
-    'plan_id': planId,
-    'type': type,
-    'vendor': vendor,
-    'mpesa_reference': mpesaReference,
-    'balance': balance,
-    'raw_sms_message': rawSmsMessage
-  };
-
-  factory Transaction.fromMap(Map<String, dynamic> map)=>Transaction(
-  id: map['id'], 
-  amount: (map['amount']as num ?)?.toDouble() ?? 0.0, 
-  description: map['description'] ?? '', 
-  date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
-  categoryId: map['category_id'] as int?,
-  planId: map['plan_id'] as int?,
-  type: map['type'] as String? ?? 'outbound',
-  vendor: map['vendor'] as String?,
-  mpesaReference: map['mpesa_reference'] as String?,
-  balance: map['balance'] as double?,
-  rawSmsMessage: map['raw_sms_message'] as String?,
-  );
+  factory Transaction.fromMap(Map<String, dynamic> map) => Transaction(
+        id: map['id'],
+        amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+        description: map['description'] ?? '',
+        date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+        categoryId: map['category_id'] as int?,
+        planId: map['plan_id'] as int?,
+        type: map['type'] as String? ?? 'outbound',
+        vendor: map['vendor'] as String?,
+        mpesaReference: map['mpesa_reference'] as String?,
+        balance: (map['balance'] as num?)?.toDouble(),
+        rawSmsMessage: map['raw_sms_message'] as String?,
+        clientId: map['client_id'] as String?,
+        isSynced: (map['is_synced'] as int? ?? 0) == 1,
+      );
 
   Transaction copyWith({
     int? id,
@@ -88,23 +93,40 @@ class Transaction{
     String? mpesaReference,
     double? balance,
     String? rawSmsMessage,
-
-
-  }){
+    String? clientId,
+    bool? isSynced,
+  }) {
     return Transaction(
-    id: id??this.id, 
-    amount: amount ?? this.amount, 
-    description: description?? this.description, 
-    date: date?? this.date,
-    categoryId: categoryId ?? this.categoryId,
-    planId: planId ?? this.planId,
-    type: type ?? this.type,
-    vendor: vendor ?? this.vendor,
-    mpesaReference: mpesaReference ?? this.mpesaReference,
-    balance: balance ?? this.balance,
-    rawSmsMessage: rawSmsMessage ?? this.rawSmsMessage
+      id: id ?? this.id,
+      amount: amount ?? this.amount,
+      description: description ?? this.description,
+      date: date ?? this.date,
+      categoryId: categoryId ?? this.categoryId,
+      planId: planId ?? this.planId,
+      type: type ?? this.type,
+      vendor: vendor ?? this.vendor,
+      mpesaReference: mpesaReference ?? this.mpesaReference,
+      balance: balance ?? this.balance,
+      rawSmsMessage: rawSmsMessage ?? this.rawSmsMessage,
+      clientId: clientId ?? this.clientId,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
+
+  // API serialization (matches Spring Boot camelCase)
+  Map<String, dynamic> toJson() => {
+        'amount': amount,
+        'description': description,
+        'date': date?.toIso8601String(),
+        'type': type,
+        'vendor': vendor,
+        'mpesaReference': mpesaReference,
+        'balance': balance,
+        'rawSmsMessage': rawSmsMessage,
+        'clientId': clientId,
+        // Note: plan and category are handled as nested objects if needed, 
+        // but for basic sync, IDs or nulls are often enough depending on backend logic.
+      };
 }
 
 class Category{
