@@ -123,3 +123,25 @@
     - **API Compatibility**: Added `toJson()` mapping to ensure Flutter models match Spring Boot's expected camelCase structure.
 - **Dependencies**:
     - Added `uuid` package for unique transaction identification.
+## version 1.8.0+10
+- **Frontend**: Flutter - Version 1.8.0+10
+- **Major Features**:
+  - **Robust M-Pesa Parsing**:
+    - Added support for **"paid to"** and **"payment to"** transaction types (Pochi La Biashara / Direct Payments).
+    - Improved name extraction regex to handle varying message formats and prevent "Unknown" descriptions.
+  - **Category UI Overhaul**:
+    - Replaced single "Total Spent" with dual **"RECEIVED"** (Inflow) and **"SPENT"** (Outflow) stats.
+    - Applied dual-stat tracking to both the main Category Grid and Category Details pages.
+  - **Transaction UI Polish**:
+    - Implemented **Expandable Transaction Items** across the app.
+    - Added a **Raw M-Pesa Message** view (monospace receipt style) to decode complex transactions (e.g., Equity Paybill).
+    - Added color-coding (+Green/-Red) and "KES" labels to all transaction amounts for better clarity.
+  - **Settings**:
+    - Added a functional **Cloud Sync** toggle in the App Settings page.
+- **Android Native**:
+  - Fixed Kotlin null-safety issues in `MainActivity.kt`.
+  - Enhanced historical SMS filtering with more keywords (`M-PESA`, `Ksh`) and added debug logging.
+- **Infrastructure**:
+  - **Dockerized Backend**: Full containerization of Spring Boot app and PostgreSQL database.
+  - **Centralized API Config**: Created `ApiConfig.dart` for easy switching between local and remote backends.
+  - **Sync Service**: Refined `SyncService` to respect user sync preferences and use the host machine's IP.
