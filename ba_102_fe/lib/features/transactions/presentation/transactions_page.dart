@@ -7,10 +7,8 @@ import 'package:ba_102_fe/features/categories/presentation/categories_page.dart'
 import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
 import 'package:ba_102_fe/providers/sms_provider.dart';
 import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
-import 'package:ba_102_fe/utils/test_data_seeder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:ba_102_fe/features/transactions/presentation/widgets/transaction_details_view.dart';
 const Color priColor = Color(0xFF4B0082);
 
