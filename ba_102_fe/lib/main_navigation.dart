@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
@@ -9,7 +10,8 @@ import 'package:ba_102_fe/utils/test_data_seeder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
-import 'dart:ui';
+import 'package:ba_102_fe/services/sync_service.dart';
+import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 
 const Color primaryColor = Color(0xFF4B0082);
 
@@ -18,7 +20,6 @@ final navIndexProvider = StateProvider<int>((ref) => 0);
 class MainNavigation extends ConsumerWidget {
   MainNavigation({super.key});
 
-  // We use a GlobalKey to control the Scaffold (opening the drawer) from the AppBar
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -32,19 +33,14 @@ class MainNavigation extends ConsumerWidget {
       SettingsPage()
     ];
 
-    void selectDestination(int index) {
-      ref.read(navIndexProvider.notifier).state = index;
-    }
-
     final smsState = ref.watch(smsProvider);
 
     return Scaffold(
-      key: _scaffoldKey, // Attach the key here
+      key: _scaffoldKey,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () {
-            // This opens the drawer using the GlobalKey
             _scaffoldKey.currentState?.openDrawer();
           },
         ),
@@ -57,7 +53,6 @@ class MainNavigation extends ConsumerWidget {
               icon: const Icon(Icons.notifications_none_outlined, color: Colors.black),
             ),
           if (currentIndex == 1) ...[
-            // SMS Status Indicator
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
@@ -94,7 +89,7 @@ class MainNavigation extends ConsumerWidget {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Sync M-Pesa History'),
-                    content: const Text('This will scan your SMS inbox for M-Pesa messages from the current month. Continue?'),
+                    content: const Text('This will scan your SMS inbox for new M-Pesa messages. Continue?'),
                     actions: [
                       TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
                       ElevatedButton(
@@ -107,7 +102,13 @@ class MainNavigation extends ConsumerWidget {
                 );
 
                 if (confirm == true && context.mounted) {
+                  // 1. Local SMS Sync
                   int count = await ref.read(smsProvider.notifier).syncHistoricalMessages();
+                  
+                  // 2. Online Cloud Sync (Silent background task)
+                  final isSyncEnabled = ref.read(cloudSyncProvider);
+                  await SyncService().syncAll(isSyncEnabled);
+
                   ref.invalidate(mpesaBalanceProvider);
                   ref.invalidate(mpesaBalanceHistoryProvider);
                   ref.invalidate(monthlySummaryProvider);
@@ -117,7 +118,7 @@ class MainNavigation extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(count > 0 ? 'Added $count new transactions.' : 'No new transactions found.'),
-                        backgroundColor: count > 0 ? Colors.green : Colors.orange,
+                        backgroundColor: Colors.green,
                       ),
                     );
                   }
@@ -136,85 +137,103 @@ class MainNavigation extends ConsumerWidget {
           ],
         ],
       ),
-
-      drawer:  SizedBox(
-        width: MediaQuery.of(context).size.width * 0.40,
+      drawer: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.70,
         child: Drawer(
           backgroundColor: Colors.transparent,
-          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-          
-          child: Container(
-            color: Colors.white,
-
-            
-            
-            
-            
-          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+            child: Container(
+              color: Colors.white.withOpacity(0.7),
+              child: Column(
+                children: [
+                  DrawerHeader(
+                    decoration: const BoxDecoration(color: Colors.transparent),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.account_balance_wallet, size: 48, color: primaryColor),
+                          const SizedBox(height: 10),
+                          Text(
+                            "Command Center",
+                            style: TextStyle(color: Colors.grey.shade800, fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.settings_outlined),
+                    title: const Text("Settings"),
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AppSettingsPage()),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text("App Info"),
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  SwitchListTile(
+                    secondary: Icon(
+                      ref.watch(privacyModeProvider) ? Icons.visibility_off : Icons.visibility,
+                      color: primaryColor,
+                    ),
+                    title: const Text("Privacy Mode"),
+                    subtitle: const Text("Hide balances on screens"),
+                    value: ref.watch(privacyModeProvider),
+                    onChanged: (value) {
+                      ref.read(privacyModeProvider.notifier).state = value;
+                    },
+                  ),
+                  const Spacer(),
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text("v1.7.0 - Financial OS", style: TextStyle(color: Colors.grey)),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
-
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: (){
-          selectDestination(1);
-        },
-        shape: const CircleBorder(),
-        backgroundColor: primaryColor,
-        elevation: 4.0,
-        child: const Icon(
-          Icons.swap_horiz_rounded, 
-          color: Colors.white, 
-          size: 30,
-          ),
-          
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      body: pages[currentIndex],
       bottomNavigationBar: BottomAppBar(
-        color: primaryColor,
-        shape: const CircularNotchedRectangle(),
-        height: 60,
-        padding: EdgeInsets.zero,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <Widget>[
-            IconButton(onPressed: ()=> selectDestination(0), 
-            icon: Icon(
-              currentIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
-              color: Colors.white,
-              size: 30,
-            ),
-            
-            
-            ),
-            const SizedBox(width: 40,),
-
+          children: [
             IconButton(
-              onPressed: ()=>selectDestination(2), 
               icon: Icon(
-                currentIndex == 2 ? Icons.person_rounded : Icons.person_outline_outlined,
-                color: Colors.white,
-                size: 30,
-              ))
+                currentIndex == 0 ? Icons.dashboard : Icons.dashboard_outlined,
+                color: currentIndex == 0 ? primaryColor : Colors.grey,
+              ),
+              onPressed: () => ref.read(navIndexProvider.notifier).state = 0,
+            ),
+            IconButton(
+              icon: Icon(
+                currentIndex == 1 ? Icons.swap_horiz : Icons.swap_horiz_outlined,
+                color: currentIndex == 1 ? primaryColor : Colors.grey,
+                size: 32, // Make the center action slightly larger
+              ),
+              onPressed: () => ref.read(navIndexProvider.notifier).state = 1,
+            ),
+            IconButton(
+              icon: Icon(
+                currentIndex == 2 ? Icons.settings : Icons.settings_outlined,
+                color: currentIndex == 2 ? primaryColor : Colors.grey,
+              ),
+              onPressed: () => ref.read(navIndexProvider.notifier).state = 2,
+            ),
           ],
         ),
-      )
-
-      
-      
-      
-      
-    
-      
-
-      
-
-
+      ),
     );
   }
 }

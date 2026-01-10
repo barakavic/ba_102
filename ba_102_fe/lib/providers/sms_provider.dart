@@ -7,6 +7,8 @@ import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:ba_102_fe/services/sync_service.dart';
+import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 
 class SmsState {
   final MpesaTransaction? lastTransaction;
@@ -92,6 +94,10 @@ class SmsNotifier extends StateNotifier<SmsState> {
       ref.invalidate(monthlySummaryProvider);
       ref.invalidate(topCategoriesProvider);
       ref.invalidate(recentTransactionsProvider);
+
+      // Trigger Cloud Sync immediately for the new transaction
+      final isSyncEnabled = ref.read(cloudSyncProvider);
+      SyncService().syncAll(isSyncEnabled);
     }
     else{
       print('Failed to parse M-Pesa message');
@@ -192,8 +198,8 @@ class SmsNotifier extends StateNotifier<SmsState> {
   
   Future<int> syncHistoricalMessages({DateTime? since}) async {
     try {
-      // Default to start of current month if no date provided
-      final syncSince = since ?? DateTime(DateTime.now().year, DateTime.now().month, 1);
+      // Default to last 30 days if no date provided
+      final syncSince = since ?? DateTime.now().subtract(const Duration(days: 30));
       
       final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: syncSince);
       
