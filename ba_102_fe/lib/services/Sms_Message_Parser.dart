@@ -34,8 +34,8 @@ class MpesaParserService {
         return _parseReceivedMoney(message, timestampMillis);
       }
 
-      if( message.contains(RegExp(r'sent to|you have sent', caseSensitive: false)) && message.contains('Ksh')){
-        print("Detected as Sent Money");
+      if( message.contains(RegExp(r'sent to|you have sent|paid to|payment to', caseSensitive: false)) && message.contains('Ksh')){
+        print("Detected as Sent Money (including Paid To)");
         return _parseSentMoney(message, timestampMillis);
       }
 
@@ -66,13 +66,11 @@ class MpesaParserService {
   MpesaTransaction? _parseReceivedMoney(String message, int timestampMillis) {
     // Example: "RKL2X3Y4Z5 Confirmed. You have received Ksh500.00 from JOHN DOE 254712345678 on 18/12/24 at 2:30 PM New M-PESA balance is Ksh2,500.00"
     
-    final referenceMatch = RegExp(r'([A-Z0-9]+)\s+Confirmed', caseSensitive: false)
-        .firstMatch(message);
+    final referenceMatch = RegExp(r'^([A-Z0-9]+)', caseSensitive: false).firstMatch(message);
+    final amountMatch = RegExp(r'Ksh([\d,]+\.?\d*)', caseSensitive: false).firstMatch(message);
     
-    final amountMatch = RegExp(r'Ksh([\d,]+\.?\d*)', caseSensitive: false)
-        .firstMatch(message);
-    
-    final senderMatch = RegExp(r'from\s+([A-Za-z\s]+?)(?:\s+\d{9,12})', caseSensitive: false)
+    // Lenient sender extraction: everything between 'from' and 'on'/'at'/'New'
+    final senderMatch = RegExp(r'from\s+(.*?)(?=\s+on|\s+at|\s+New|\s+\d{10,12}|$)', caseSensitive: false)
         .firstMatch(message);
     
     final balanceMatch = RegExp(r'balance.*?Ksh([\d,]+\.?\d*)', caseSensitive: false)
@@ -83,7 +81,7 @@ class MpesaParserService {
         reference: referenceMatch.group(1)!,
         amount: _parseAmount(amountMatch.group(1)!),
         type: TransactionType.inbound,
-        sender: senderMatch?.group(1)?.trim(),
+        sender: senderMatch?.group(1)?.trim() ?? "M-Pesa User",
         balance: balanceMatch != null ? _parseAmount(balanceMatch.group(1)!) : 0,
         timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMillis),
         rawMessage: message,
@@ -96,16 +94,14 @@ class MpesaParserService {
    MpesaTransaction? _parseSentMoney(String message, int timestampMillis) {
     // Example: "RKL2X3Y4Z5 Confirmed. You have sent Ksh300.00 to JANE SMITH 254723456789 on 18/12/24 at 3:45 PM. New M-PESA balance is Ksh2,200.00. Transaction cost, Ksh0.00"
     
-    final referenceMatch = RegExp(r'([A-Z0-9]+)\s+Confirmed', caseSensitive: false)
+    final referenceMatch = RegExp(r'^([A-Z0-9]+)', caseSensitive: false).firstMatch(message);
+    final amountMatch = RegExp(r'Ksh([\d,]+\.?\d*)', caseSensitive: false).firstMatch(message);
+    
+    // Lenient recipient extraction: everything between 'to' and 'on'/'for'/'New'
+    final recipientMatch = RegExp(r'(?:sent\s+to|paid\s+to|to)\s+(.*?)(?=\s+on|\s+for|\s+at|\s+New|\s+\d{10,12}|$)', caseSensitive: false)
         .firstMatch(message);
     
-    final amountMatch = RegExp(r'Ksh([\d,]+\.?\d*)', caseSensitive: false)
-        .firstMatch(message);
-    
-    final recipientMatch = RegExp(r'sent\s+to\s+([A-Za-z0-9\s]+?)(?:\s+for\s+account|\s+on\s+\d{2}/\d{2}/\d{2}|\.|\s+New\s+M-?PESA)', caseSensitive: false)
-        .firstMatch(message);
-    
-    final balanceMatch = RegExp(r'balance\s+is\s+Ksh([\d,]+\.?\d*)', caseSensitive: false)
+    final balanceMatch = RegExp(r'balance.*?Ksh([\d,]+\.?\d*)', caseSensitive: false)
         .firstMatch(message);
     
     if (referenceMatch != null && amountMatch != null) {
@@ -113,7 +109,7 @@ class MpesaParserService {
         reference: referenceMatch.group(1)!,
         amount: _parseAmount(amountMatch.group(1)!),
         type: TransactionType.outbound,
-        recipient: recipientMatch?.group(1)?.trim(),
+        recipient: recipientMatch?.group(1)?.trim() ?? "M-Pesa Recipient",
         balance: balanceMatch != null ? _parseAmount(balanceMatch.group(1)!) : 0,
         timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMillis),
         rawMessage: message,
