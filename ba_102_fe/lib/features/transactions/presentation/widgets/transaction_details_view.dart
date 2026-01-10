@@ -3,6 +3,8 @@ import 'package:ba_102_fe/features/transactions/presentation/transactions_page.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ba_102_fe/providers/categories_provider.dart';
+import 'package:ba_102_fe/services/icon_service.dart';
 
 class TransactionDetailsView extends ConsumerStatefulWidget {
   final AsyncValue<List<Transaction>> txAsyncValue;
@@ -16,7 +18,8 @@ class TransactionDetailsView extends ConsumerStatefulWidget {
 }
 
 class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView> {
-  String _selectedFilter = 'All';
+  int? _selectedCategoryId; // null for 'All'
+  String _selectedType = 'All'; // All, In, Out
   String _sortBy = 'Newest'; // Newest, Oldest, Highest, Lowest
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
@@ -52,23 +55,49 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
           ),
         ),
 
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        const SizedBox(height: 8),
+        // 1. Transaction Type Filter (In/Out)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
             children: [
-              _buildPillFilter('All', icon: Icons.list),
+              _buildTypePill('All', Icons.all_inclusive),
               const SizedBox(width: 8),
-              _buildPillFilter('Food', icon: Icons.fastfood),
+              _buildTypePill('Out', Icons.arrow_upward, color: Colors.red),
               const SizedBox(width: 8),
-              _buildPillFilter('Shopping', icon: Icons.shopping_bag),
-              const SizedBox(width: 8),
-              _buildPillFilter('Travel', icon: Icons.airplanemode_active),
-               const SizedBox(width: 8),
-              _buildPillFilter('Bills', icon: Icons.receipt),
+              _buildTypePill('In', Icons.arrow_downward, color: Colors.green),
             ],
           ),
         ),
+
+        const SizedBox(height: 12),
+        // 2. Dynamic Category Filter
+        ref.watch(categoriesProvider).when(
+          data: (categories) {
+            final topLevel = categories.where((c) => c.parentId == null).toList();
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  _buildCategoryPill(null, 'All', Icons.grid_view),
+                  ...topLevel.map((cat) => Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: _buildCategoryPill(
+                      cat.id, 
+                      cat.name, 
+                      IconService.getIcon(cat.icon, cat.name),
+                      color: cat.color != null ? Color(int.parse(cat.color!)) : null,
+                    ),
+                  )),
+                ],
+              ),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 8),
         
         Expanded(
           child: RefreshIndicator(
@@ -84,15 +113,17 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
                   return date.year == _selectedMonth.year && date.month == _selectedMonth.month;
                 }).toList();
 
-                // 2. Filter by Category
+                // 2. Filter by Type (In/Out)
                 filtered = filtered.where((tx) {
-                  if (_selectedFilter == 'All') return true;
-                  final desc = (tx.description ?? tx.vendor ?? '').toLowerCase();
-                  if (_selectedFilter == 'Food') return desc.contains('food') || desc.contains('kfc') || desc.contains('restaurant');
-                  if (_selectedFilter == 'Shopping') return desc.contains('shop') || desc.contains('jumia') || desc.contains('store');
-                  if (_selectedFilter == 'Travel') return desc.contains('uber') || desc.contains('fuel') || desc.contains('travel');
-                  if (_selectedFilter == 'Bills') return desc.contains('token') || desc.contains('internet') || desc.contains('bill');
-                  return true;
+                  if (_selectedType == 'All') return true;
+                  final isOut = tx.type == 'outbound' || tx.type == 'withdrawal';
+                  return _selectedType == 'Out' ? isOut : !isOut;
+                }).toList();
+
+                // 3. Filter by Category
+                filtered = filtered.where((tx) {
+                  if (_selectedCategoryId == null) return true;
+                  return tx.categoryId == _selectedCategoryId;
                 }).toList();
 
                 // 3. Sort transactions
@@ -123,7 +154,7 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
                             const Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
                             const SizedBox(height: 16),
                             Text(
-                              'No ${_selectedFilter == 'All' ? '' : _selectedFilter} Transactions in ${_getMonthLabel(_selectedMonth)}',
+                              'No transactions found for these filters in ${_getMonthLabel(_selectedMonth)}',
                               style: const TextStyle(color: Colors.grey, fontSize: 16),
                               textAlign: TextAlign.center,
                             ),
@@ -233,37 +264,65 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
     );
   }
 
-  Widget _buildPillFilter(String label, {required IconData icon}) {
-    final isSelected = _selectedFilter == label;
+  Widget _buildTypePill(String label, IconData icon, {Color? color}) {
+    final isSelected = _selectedType == label;
+    final activeColor = color ?? priColor;
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => setState(() => _selectedFilter = label),
+        onTap: () => setState(() => _selectedType = label),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? priColor : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isSelected ? priColor : Colors.grey.shade300,
-              width: 1
-            ),
+            color: isSelected ? activeColor : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isSelected ? activeColor : Colors.grey.shade300),
           ),
           child: Row(
             children: [
-              Icon(
-                icon, 
-                size: 16, 
-                color: isSelected ? Colors.white : Colors.grey.shade700
-              ),
-              const SizedBox(width: 8),
+              Icon(icon, size: 14, color: isSelected ? Colors.white : Colors.grey.shade700),
+              const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
                   color: isSelected ? Colors.white : Colors.grey.shade700,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryPill(int? id, String label, IconData icon, {Color? color}) {
+    final isSelected = _selectedCategoryId == id;
+    final activeColor = color ?? priColor;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _selectedCategoryId = id),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? activeColor : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isSelected ? activeColor : Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 14, color: isSelected ? Colors.white : Colors.grey.shade700),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
               ),
             ],

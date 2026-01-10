@@ -10,6 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d budgeting_app" ]
       interval: 10s
@@ -19,6 +20,7 @@ services:
   app:
     build: ./budgeting-app
     container_name: ba_102_backend
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
