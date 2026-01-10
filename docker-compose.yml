@@ -34,3 +34,11 @@ services:
       - ./.env:/app/.env
     env_file:
       - ./.env
+
+  hawkeye:
+    build: ./market-intelligence
+    container_name: hawkeye_service
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    # No depends_on needed yet, it's independent
