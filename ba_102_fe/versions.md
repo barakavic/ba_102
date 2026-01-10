@@ -108,3 +108,18 @@
 - **Fixes**:
     - Fixed a critical issue where `MainNavigation` could not be instantiated as a `const` due to the `GlobalKey` requirement.
     - Restored missing historical sync methods in `SmsNotifier` and `SmsListenerService`.
+
+## version 1.7.0+9
+- **Frontend**: Flutter - Version 1.7.0+9
+- **Major Features**:
+  - **Online Sync Engine**:
+    - Implemented `SyncService` for pushing local SQLite transactions to the PostgreSQL backend.
+    - Added `clientId` (UUID) to all transactions for deduplication and sync-safety.
+    - Integrated real-time sync: New SMS transactions are automatically pushed to the cloud on arrival.
+    - Added manual "Sync to Cloud" trigger within the M-Pesa history sync flow.
+- **Data & Infrastructure**:
+    - **Database v10**: Upgraded SQLite schema to include `client_id` and `is_synced` status.
+    - **Migration Logic**: Added automatic UUID generation for existing legacy transactions.
+    - **API Compatibility**: Added `toJson()` mapping to ensure Flutter models match Spring Boot's expected camelCase structure.
+- **Dependencies**:
+    - Added `uuid` package for unique transaction identification.
