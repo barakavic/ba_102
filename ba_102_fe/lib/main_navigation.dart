@@ -111,7 +111,7 @@ class MainNavigation extends ConsumerWidget {
 
                   ref.invalidate(mpesaBalanceProvider);
                   ref.invalidate(mpesaBalanceHistoryProvider);
-                  ref.invalidate(monthlySummaryProvider);
+                  ref.invalidate(periodSummaryProvider);
                   ref.invalidate(topCategoriesProvider);
                   
                   if (context.mounted) {

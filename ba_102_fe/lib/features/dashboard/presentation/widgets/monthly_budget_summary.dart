@@ -8,7 +8,7 @@ class MonthlyBudgetSummary extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(monthlySummaryProvider);
+    final summaryAsync = ref.watch(periodSummaryProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
 
     return summaryAsync.when(
@@ -55,9 +55,9 @@ class MonthlyBudgetSummary extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Monthly Reality Check',
-                    style: TextStyle(
+                  Text(
+                    '${ref.watch(dashboardPeriodProvider)} Reality Check',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,

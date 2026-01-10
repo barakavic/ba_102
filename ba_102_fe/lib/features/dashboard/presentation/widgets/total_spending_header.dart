@@ -8,9 +8,17 @@ class TotalSpendingHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(monthlySummaryProvider);
+    final summaryAsync = ref.watch(periodSummaryProvider);
+    final period = ref.watch(dashboardPeriodProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
     const Color priColor = Color(0xFF4B0082);
+
+    void cyclePeriod() {
+      final current = ref.read(dashboardPeriodProvider);
+      if (current == 'Week') ref.read(dashboardPeriodProvider.notifier).state = 'Month';
+      else if (current == 'Month') ref.read(dashboardPeriodProvider.notifier).state = 'Year';
+      else ref.read(dashboardPeriodProvider.notifier).state = 'Week';
+    }
 
     return summaryAsync.when(
       data: (data) {
@@ -21,12 +29,30 @@ class TotalSpendingHeader extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Total Spendings this month',
-                style: TextStyle(
-                  fontSize: 16, 
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
+              GestureDetector(
+                onTap: cyclePeriod,
+                child: Row(
+                  children: [
+                    const Text(
+                      'Total Spendings this ',
+                      style: TextStyle(
+                        fontSize: 16, 
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      period.toLowerCase(),
+                      style: const TextStyle(
+                        fontSize: 16, 
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600, size: 20),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),

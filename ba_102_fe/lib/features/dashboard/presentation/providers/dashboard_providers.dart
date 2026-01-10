@@ -25,21 +25,39 @@ final recentTransactionsProvider = FutureProvider<List<Transaction>>((ref) async
   return allTransactions.take(20).toList();
 });
 
-final monthlySummaryProvider = FutureProvider<Map<String, double>>((ref) async {
+final dashboardPeriodProvider = StateProvider<String>((ref) => 'Month'); // Week, Month, Year
+
+final periodSummaryProvider = FutureProvider<Map<String, double>>((ref) async {
   final db = await DatabaseHelper.instance.database;
   final transactionsLs = TransactionsLs(db);
   final allTransactions = await transactionsLs.getTransactions();
+  final period = ref.watch(dashboardPeriodProvider);
   
   final now = DateTime.now();
-  final currentMonthTransactions = allTransactions.where((t) {
+  final filteredTransactions = allTransactions.where((t) {
     if (t.date == null) return false;
-    return t.date!.year == now.year && t.date!.month == now.month;
+    final date = t.date!;
+    
+    if (period == 'Week') {
+      // Find the start of the week (Monday)
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      final startOfNextWeek = startOfWeek.add(const Duration(days: 7));
+      // Reset times to midnight for accurate comparison
+      final start = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+      final end = DateTime(startOfNextWeek.year, startOfNextWeek.month, startOfNextWeek.day);
+      return date.isAfter(start.subtract(const Duration(seconds: 1))) && date.isBefore(end);
+    } else if (period == 'Year') {
+      return date.year == now.year;
+    } else {
+      // Default to Month
+      return date.year == now.year && date.month == now.month;
+    }
   });
 
   double totalSpent = 0;
   double totalIncome = 0;
 
-  for (var t in currentMonthTransactions) {
+  for (var t in filteredTransactions) {
     if (t.type == 'outbound' || t.type == 'withdrawal') {
       totalSpent += t.amount ?? 0;
     } else if (t.type == 'inbound' || t.type == 'deposit') {

@@ -15,7 +15,7 @@ class HomeScreen extends ConsumerWidget{
       onRefresh: () async {
         ref.invalidate(mpesaBalanceProvider);
         ref.invalidate(mpesaBalanceHistoryProvider);
-        ref.invalidate(monthlySummaryProvider);
+        ref.invalidate(periodSummaryProvider);
         ref.invalidate(topCategoriesProvider);
         ref.invalidate(recentTransactionsProvider);
         await ref.read(mpesaBalanceProvider.future);

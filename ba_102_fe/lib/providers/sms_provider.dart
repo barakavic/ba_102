@@ -91,7 +91,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
       ref.invalidate(txProv);
       ref.invalidate(mpesaBalanceProvider);
       ref.invalidate(mpesaBalanceHistoryProvider);
-      ref.invalidate(monthlySummaryProvider);
+      ref.invalidate(periodSummaryProvider);
       ref.invalidate(topCategoriesProvider);
       ref.invalidate(recentTransactionsProvider);
 
@@ -231,7 +231,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
         ref.invalidate(txProv);
         ref.invalidate(mpesaBalanceProvider);
         ref.invalidate(mpesaBalanceHistoryProvider);
-        ref.invalidate(monthlySummaryProvider);
+        ref.invalidate(periodSummaryProvider);
         ref.invalidate(topCategoriesProvider);
         ref.invalidate(recentTransactionsProvider);
       }
