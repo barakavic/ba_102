@@ -15,7 +15,17 @@ class CategoryDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalSpent = category.transactions.fold<double>(0.0, (sum, tx) => sum + (tx.amount ?? 0.0));
+    double totalSpent = 0;
+    double totalReceived = 0;
+
+    for (var tx in category.transactions) {
+      final type = tx.type?.toLowerCase();
+      if (type == 'inbound' || type == 'deposit') {
+        totalReceived += (tx.amount ?? 0);
+      } else {
+        totalSpent += (tx.amount ?? 0);
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -26,12 +36,12 @@ class CategoryDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Total spent: ${totalSpent.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatCard("TOTAL RECEIVED", totalReceived, Colors.green),
+                _buildStatCard("TOTAL SPENT", totalSpent, Colors.red),
+              ],
             ),
             const SizedBox(
               height: 16.0,
@@ -48,31 +58,70 @@ class CategoryDetailsPage extends StatelessWidget {
                       itemCount: category.transactions.length,
                       itemBuilder: (context, index) {
                         final tx = category.transactions[index];
+                        final isIncome = tx.type?.toLowerCase() == 'inbound' || tx.type?.toLowerCase() == 'deposit';
                         return Card(
-                          margin: const EdgeInsets.symmetric(
-                            vertical: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.shade200),
                           ),
-                          child: ListTile(
-                            title: Text(tx.description ?? 'No description'),
-                            subtitle: Text(
-                              'Date: ${tx.date?.toIso8601String().substring(0, 10) ?? 'N/A'}',
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              title: Text(tx.description ?? 'No description', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              subtitle: Text(
+                                'Date: ${tx.date?.toIso8601String().substring(0, 10) ?? 'N/A'}',
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${isIncome ? '+' : '-'}KES ${tx.amount?.toStringAsFixed(0) ?? '0'}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isIncome ? Colors.green.shade700 : Colors.red.shade700,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.drive_file_move_outlined, 
+                                      color: category.id == -1 ? Colors.orange : Colors.grey.shade400,
+                                      size: 18,
+                                    ),
+                                    onPressed: () => _showMoveDialog(context, tx),
+                                  ),
+                                ],
+                              ),
                               children: [
-                                Text(
-                                  tx.amount?.toStringAsFixed(2) ?? '0.00',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.grey.shade200),
                                   ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.drive_file_move_outlined, 
-                                    color: category.id == -1 ? Colors.orange : Colors.blue.shade300,
-                                    size: 20,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "RAW M-PESA MESSAGE",
+                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.1),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        tx.rawSmsMessage ?? "No raw message available.",
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade800,
+                                          fontFamily: 'monospace',
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  onPressed: () => _showMoveDialog(context, tx),
                                 ),
                               ],
                             ),
@@ -81,6 +130,34 @@ class CategoryDetailsPage extends StatelessWidget {
                       },
                     ),
             )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, double amount, Color color) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color.withOpacity(0.7), letterSpacing: 1.0),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'KES ${amount.toStringAsFixed(0)}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color),
+            ),
           ],
         ),
       ),

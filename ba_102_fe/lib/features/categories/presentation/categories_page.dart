@@ -27,13 +27,28 @@ class CategoriesPage extends ConsumerWidget {
     return priColor;
   }
 
-  double _getTotalSpent(Category parent, List<Category> allCategories) {
-    double total = parent.transactions.fold(0, (sum, tx) => sum + (tx.amount ?? 0));
+  Map<String, double> _getCategoryStats(Category parent, List<Category> allCategories) {
+    double spent = 0;
+    double received = 0;
+
+    void processTransactions(List<Transaction> txs) {
+      for (var tx in txs) {
+        final type = tx.type?.toLowerCase();
+        if (type == 'inbound' || type == 'deposit') {
+          received += (tx.amount ?? 0);
+        } else {
+          spent += (tx.amount ?? 0);
+        }
+      }
+    }
+
+    processTransactions(parent.transactions);
     final children = allCategories.where((c) => c.parentId == parent.id);
     for (var child in children) {
-      total += child.transactions.fold(0, (sum, tx) => sum + (tx.amount ?? 0));
+      processTransactions(child.transactions);
     }
-    return total;
+
+    return {'spent': spent, 'received': received};
   }
 
   int _getTotalItems(Category parent, List<Category> allCategories) {
@@ -188,9 +203,19 @@ class CategoriesPage extends ConsumerWidget {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          "KES ${NumberFormat('#,###').format(sub.transactions.fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)))}",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              "In: KES ${NumberFormat('#,###').format(sub.transactions.where((tx) => tx.type?.toLowerCase() == 'inbound' || tx.type?.toLowerCase() == 'deposit').fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)))}",
+                              style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              "Out: KES ${NumberFormat('#,###').format(sub.transactions.where((tx) => tx.type?.toLowerCase() != 'inbound' && tx.type?.toLowerCase() != 'deposit').fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0)))}",
+                              style: const TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 8),
                         PopupMenuButton<String>(
@@ -290,7 +315,7 @@ class CategoriesPage extends ConsumerWidget {
                   final color = _getCategoryColor(category);
                   final icon = IconService.getIcon(category.icon, category.name);
                   final subCategories = categories.where((c) => c.parentId == category.id).toList();
-                  final totalSpent = _getTotalSpent(category, categories);
+                  final stats = _getCategoryStats(category, categories); // Get both spent and received
                   final totalItems = _getTotalItems(category, categories);
 
                   return GestureDetector(
@@ -415,13 +440,29 @@ class CategoriesPage extends ConsumerWidget {
                                     ),
                                   ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  'KES ${NumberFormat('#,###').format(totalSpent)}',
-                                  style: TextStyle(
-                                    fontSize: 14.0,
-                                    fontWeight: FontWeight.w900,
-                                    color: color,
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        const Text("RECEIVED", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                        Text(
+                                          NumberFormat('#,###').format(stats['received']),
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      children: [
+                                        const Text("SPENT", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                        Text(
+                                          NumberFormat('#,###').format(stats['spent']),
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
