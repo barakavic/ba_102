@@ -321,8 +321,7 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
   }
 }
 
-class TransactionItem extends StatelessWidget{
-
+class TransactionItem extends StatelessWidget {
   final Transaction transaction;
 
   const TransactionItem({
@@ -333,58 +332,87 @@ class TransactionItem extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == 'outbound' || transaction.type == 'withdrawal';
+    final isIncome = transaction.type == 'inbound' || transaction.type == 'deposit';
     IconData icon = _getIcon();
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: priColor.withOpacity(0.1),
-        child: Icon(icon, color: priColor, size: 20,),
-      ),
-      title: Text(transaction.description ?? transaction.vendor ?? 'Uknown'),
-      subtitle: Row(
-        children: [
-          Text(
-            _formatDate(transaction.date),
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.grey
-            ),
-          ),
-          if(transaction.mpesaReference != null) ...[
-            const SizedBox(width: 8),
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: priColor.withOpacity(0.1),
+          child: Icon(icon, color: priColor, size: 20),
+        ),
+        title: Text(
+          transaction.description ?? transaction.vendor ?? 'Unknown',
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          _formatDate(transaction.date),
+          style: const TextStyle(fontSize: 11, color: Colors.grey),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
             Text(
-              'Ref: ${transaction.mpesaReference}',
-              style: const TextStyle(fontSize: 10.0, color: Colors.grey),
-
+              '${isExpense ? '-' : (isIncome ? '+' : '')}KES ${NumberFormat('#,###').format(transaction.amount ?? 0)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isExpense ? Colors.red.shade700 : (isIncome ? Colors.green.shade700 : Colors.black87),
+              ),
             ),
+            if (transaction.balance != null)
+              Text(
+                'Bal: ${NumberFormat('#,###').format(transaction.balance)}',
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
+              ),
           ],
-        ],
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-
+        ),
         children: [
-          Text(
-            '${isExpense ? '-' : '+'}KES${transaction.amount?.toStringAsFixed(0) ?? '0'}',
-
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isExpense ? Colors.red.shade700 : Colors.grey
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-          ),
-          if (transaction.balance != null)
-          Text(
-            'Bal: ${transaction.balance!.toStringAsFixed(0)}',
-            style: const TextStyle(
-              fontSize: 10,
-              color: Colors.grey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "RAW M-PESA MESSAGE",
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  transaction.rawSmsMessage ?? "No raw message available for this transaction.",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade800,
+                    fontFamily: 'monospace',
+                    height: 1.4,
+                  ),
+                ),
+                if (transaction.mpesaReference != null) ...[
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Reference", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text(transaction.mpesaReference!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
         ],
       ),
     );
-
-}
+  }
 
     IconData _getIcon(){
       switch(transaction.type){
