@@ -42,7 +42,8 @@ class PriceSignal:
     source: str
     confidence: float
     observed_at: datetime
-    ttl_hours:int
+    ttl_hours: int
+    original_price: Optional[float] = None # The "was" price, if available
 
 @dataclass(frozen=True)
 class PriceBand:
