@@ -55,7 +55,7 @@ class PriceBand:
     high: float
     
 @dataclass(frozen=True)
-class Priceconsensus:
+class PriceConsensus:
     """ 
     -System belief derived from many price signals
     """
@@ -67,8 +67,9 @@ class Priceconsensus:
     last_updated: datetime
 
 
-@dataclass(frozen=True)
-class UserFinancialContext:
+from pydantic import BaseModel
+
+class UserFinancialContext(BaseModel):
     """ 
     -User constraints only with no advice
     """

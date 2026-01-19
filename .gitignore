@@ -50,4 +50,4 @@ venv.bak/
 # Project specific
 postgres_data/
 market-intelligence/venv/
-market-intelligence/test_scraper.py
+/market-intelligence/test
