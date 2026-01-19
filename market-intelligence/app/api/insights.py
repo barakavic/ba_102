@@ -35,6 +35,8 @@ class DecisionResponse(BaseModel):
     wait_risk: str
     confidence: str
     rationale: List[str]
+    best_offer_source: str
+    best_offer_url: str
 
 @router.post("/analyze", response_model=DecisionResponse)
 async def analyze_product(request: AnalyzeRequest):
@@ -114,5 +116,7 @@ async def analyze_product(request: AnalyzeRequest):
         ),
         wait_risk=decision.wait_risk.value,
         confidence=decision.confidence.value,
-        rationale=decision.rationale
+        rationale=decision.rationale,
+        best_offer_source=consensus.best_offer_source,
+        best_offer_url=consensus.best_offer_url
     )

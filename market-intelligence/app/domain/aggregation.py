@@ -48,8 +48,19 @@ class PriceAggregator:
 
         # 4. Determine Trend
         # For now, we don't have historical data in this pass, so we default to STABLE
-        # Real implementation would compare with DB history
         trend = PriceTrend.STABLE
+
+        # 5. Identify Best Offer (Lowest Price)
+        # We need to find the signal that corresponds to the low_price
+        best_signal = None
+        for signal in signals:
+            try:
+                converted = CurrencyConverter.convert(signal.price, signal.currency, "KES")
+                if abs(converted - low_price) < 0.01:
+                    best_signal = signal
+                    break
+            except:
+                continue
 
         return PriceConsensus(
             product_id=product_id,
@@ -57,5 +68,7 @@ class PriceAggregator:
             confidence=confidence,
             trend=trend,
             signals_used=num_signals,
-            last_updated=datetime.now()
+            last_updated=datetime.now(),
+            best_offer_source=best_signal.source if best_signal else "Unknown",
+            best_offer_url=best_signal.product_id if best_signal else ""
         )

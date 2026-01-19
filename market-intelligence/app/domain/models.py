@@ -65,6 +65,8 @@ class PriceConsensus:
     trend: PriceTrend
     signals_used: int
     last_updated: datetime
+    best_offer_source: str = "Unknown"
+    best_offer_url: str = ""
 
 
 from pydantic import BaseModel

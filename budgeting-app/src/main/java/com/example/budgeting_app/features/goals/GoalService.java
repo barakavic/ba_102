@@ -66,12 +66,17 @@ public class GoalService {
                 goal.setCurrency(response.getCurrency());
                 goal.setMarketStatus(response.getWait_risk().equals("LOW") ? "BUY_NOW" : "WAIT");
                 goal.setLastChecked(LocalDateTime.now());
-                goal.setTrackingUrl(response.getProduct_id()); // Using product_id as URL for now
+                goal.setTrackingUrl(response.getBest_offer_url()); // Using specific URL
 
                 // Join rationale list into a string
-                if (response.getRationale() != null) {
-                    goal.setRationale(String.join(". ", response.getRationale()));
+                String rationaleText = "";
+                if (response.getBest_offer_source() != null) {
+                    rationaleText += "Found at " + response.getBest_offer_source() + ". ";
                 }
+                if (response.getRationale() != null) {
+                    rationaleText += String.join(". ", response.getRationale());
+                }
+                goal.setRationale(rationaleText);
 
                 return goalRepository.save(goal);
             }
@@ -106,5 +111,7 @@ public class GoalService {
         private String currency;
         private String wait_risk;
         private List<String> rationale;
+        private String best_offer_source;
+        private String best_offer_url;
     }
 }
