@@ -111,7 +111,8 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/ba-102/app_icon.png"
+  image_path: assets/icon/spree_foreground.png
 
+  adaptive_icon_foreground: assets/icon/spree_foreground.png
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/ba-102/app_icon.png"
+  
