@@ -32,6 +32,19 @@ class Product :
     imported: bool = True
 
 @dataclass(frozen=True)
+class MarketCandidate:
+    """
+    Raw scraped data before semantic validation.
+    """
+    source: str
+    title: str
+    url: str
+    price: float
+    currency: str
+    original_price: Optional[float] = None
+    snippet: Optional[str] = None
+
+@dataclass(frozen=True)
 class PriceSignal:
     """ 
     -Obserevd price from any source
@@ -44,6 +57,19 @@ class PriceSignal:
     observed_at: datetime
     ttl_hours: int
     original_price: Optional[float] = None # The "was" price, if available
+
+    @classmethod
+    def from_candidate(cls, candidate: MarketCandidate, confidence: float = 0.8):
+        return cls(
+            product_id=candidate.url,
+            price=candidate.price,
+            currency=candidate.currency,
+            source=candidate.source,
+            confidence=confidence,
+            observed_at=datetime.now(),
+            ttl_hours=24,
+            original_price=candidate.original_price
+        )
 
 @dataclass(frozen=True)
 class PriceBand:

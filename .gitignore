@@ -4,6 +4,7 @@ HAWKEYE_IMPLEMENTATION_PLAN.md
 .env
 .aider*
 PHASE_2.md
+!torch
 
 # Python
 __pycache__/
