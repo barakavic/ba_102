@@ -145,3 +145,18 @@
   - **Dockerized Backend**: Full containerization of Spring Boot app and PostgreSQL database.
   - **Centralized API Config**: Created `ApiConfig.dart` for easy switching between local and remote backends.
   - **Sync Service**: Refined `SyncService` to respect user sync preferences and use the host machine's IP.
+
+## version 1.9.0+11
+- **Backend (Hawkeye - Python)**:
+  - **Semantic Choke-point (NLI Gate)**:
+    - Implemented Natural Language Inference (NLI) using `distilbert-base-uncased-mnli`.
+    - Centralized validation logic in `MarketGate` to filter out irrelevant search results (e.g., accessories).
+    - Refactored scrapers (Jumia, Amazon) to return raw `MarketCandidate` objects, keeping them "dumb" and decoupled from ML logic.
+  - **Source Tracking**:
+    - Enhanced API to return `best_offer_source` and `best_offer_url` for better transparency.
+- **Backend (Spring Boot - Java)**:
+  - **Goal Intelligence Integration**:
+    - Updated `Goal` entity and `GoalService` to store market price, source, and direct tracking URL.
+    - Integrated with Hawkeye API for real-time product analysis.
+- **Infrastructure**:
+  - Added `torch` and `transformers` to Hawkeye dependencies for on-device NLI processing.
