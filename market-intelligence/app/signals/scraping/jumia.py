@@ -23,7 +23,7 @@ class JumiaScraper(SignalProducer):
         async def extract_jumia_data(page: Page):
             # Wait for network to be idle to ensure dynamic content is loaded
             try:
-                await page.wait_for_load_state("networkidle", timeout=10000)
+                await page.wait_for_load_state("networkidle", timeout=20000)
             except Exception:
                 pass # Proceed anyway if timeout
 
@@ -98,7 +98,7 @@ class JumiaScraper(SignalProducer):
         
         async def get_first_result_url(page: Page):
             result_selector = "article.prd a.core"
-            await page.wait_for_selector(result_selector, timeout=10000)
+            await page.wait_for_selector(result_selector, timeout=20000)
             
             first_result = await page.query_selector(result_selector)
             if first_result:

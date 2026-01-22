@@ -1,7 +1,6 @@
 *.vscode
 ROADMAP_PRIVATE.md
 HAWKEYE_IMPLEMENTATION_PLAN.md
-.env
 .aider*
 PHASE_2.md
 !torch
@@ -18,7 +17,9 @@ dist/
 downloads/
 eggs/
 .eggs/
+# Avoid ignoring Flutter source code
 lib/
+!ba_102_fe/lib/
 lib64/
 parts/
 sdist/
@@ -42,6 +43,7 @@ venv.bak/
 .env.development.local
 .env.test.local
 .env.production.local
+.env
 
 # IDEs
 .idea/

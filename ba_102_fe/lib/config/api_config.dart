@@ -3,6 +3,7 @@ class ApiConfig {
   static const String baseUrl = "http://192.168.100.132:8080";
   
   static String get transactionsUrl => "$baseUrl/api/transactions";
-  static String get categoriesUrl => "$baseUrl/categories";
-  static String get plansUrl => "$baseUrl/plans";
+  static String get categoriesUrl => "$baseUrl/api/categories";
+  static String get plansUrl => "$baseUrl/api/plans";
+  static String get goalsUrl => "$baseUrl/api/goals";
 }

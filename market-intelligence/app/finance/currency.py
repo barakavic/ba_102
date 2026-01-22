@@ -10,9 +10,9 @@ class CurrencyConverter:
     # TODO: Connect to a live forex API
     RATES = {
         "KES": 1.0,
-        "USD": 160.0,  # Example rate
-        "EUR": 175.0,
-        "GBP": 200.0
+        "USD": 129.0,  # Updated to current market rate
+        "EUR": 140.0,
+        "GBP": 165.0
     }
 
     @classmethod

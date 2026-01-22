@@ -247,3 +247,116 @@ class Plan {
     planType: map['plan_type'] ?? 'monthly',
   );
 }
+
+class Goal {
+  final int? id;
+  final String name;
+  final double targetAmount;
+  final double currentAmount;
+  final DateTime? deadline;
+  final double? marketPrice;
+  final String? trackingUrl;
+  final DateTime? lastChecked;
+  final String? marketStatus;
+  final String? currency;
+  final String? rationale;
+
+  Goal({
+    this.id,
+    required this.name,
+    required this.targetAmount,
+    this.currentAmount = 0.0,
+    this.deadline,
+    this.marketPrice,
+    this.trackingUrl,
+    this.lastChecked,
+    this.marketStatus,
+    this.currency,
+    this.rationale,
+  });
+
+  factory Goal.fromJson(Map<String, dynamic> json) => Goal(
+        id: json['id'],
+        name: json['name'],
+        targetAmount: (json['targetAmount'] as num?)?.toDouble() ?? 0.0,
+        currentAmount: (json['currentAmount'] as num?)?.toDouble() ?? 0.0,
+        deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
+        marketPrice: (json['marketPrice'] as num?)?.toDouble(),
+        trackingUrl: json['trackingUrl'],
+        lastChecked: json['lastChecked'] != null ? DateTime.parse(json['lastChecked']) : null,
+        marketStatus: json['marketStatus'],
+        currency: json['currency'],
+        rationale: json['rationale'],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'targetAmount': targetAmount,
+        'currentAmount': currentAmount,
+        'deadline': deadline?.toIso8601String(),
+        'marketPrice': marketPrice,
+        'trackingUrl': trackingUrl,
+        'lastChecked': lastChecked?.toIso8601String(),
+        'marketStatus': marketStatus,
+        'currency': currency,
+        'rationale': rationale,
+      };
+
+  // Local DB mapping
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'target_amount': targetAmount,
+        'current_amount': currentAmount,
+        'deadline': deadline?.toIso8601String(),
+        'market_price': marketPrice,
+        'tracking_url': trackingUrl,
+        'last_checked': lastChecked?.toIso8601String(),
+        'market_status': marketStatus,
+        'currency': currency,
+        'rationale': rationale,
+      };
+
+  factory Goal.fromMap(Map<String, dynamic> map) => Goal(
+        id: map['id'],
+        name: map['name'],
+        targetAmount: (map['target_amount'] as num?)?.toDouble() ?? 0.0,
+        currentAmount: (map['current_amount'] as num?)?.toDouble() ?? 0.0,
+        deadline: map['deadline'] != null ? DateTime.parse(map['deadline']) : null,
+        marketPrice: (map['market_price'] as num?)?.toDouble(),
+        trackingUrl: map['tracking_url'],
+        lastChecked: map['last_checked'] != null ? DateTime.parse(map['last_checked']) : null,
+        marketStatus: map['market_status'],
+        currency: map['currency'],
+        rationale: map['rationale'],
+      );
+
+  Goal copyWith({
+    int? id,
+    String? name,
+    double? targetAmount,
+    double? currentAmount,
+    DateTime? deadline,
+    double? marketPrice,
+    String? trackingUrl,
+    DateTime? lastChecked,
+    String? marketStatus,
+    String? currency,
+    String? rationale,
+  }) {
+    return Goal(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      targetAmount: targetAmount ?? this.targetAmount,
+      currentAmount: currentAmount ?? this.currentAmount,
+      deadline: deadline ?? this.deadline,
+      marketPrice: marketPrice ?? this.marketPrice,
+      trackingUrl: trackingUrl ?? this.trackingUrl,
+      lastChecked: lastChecked ?? this.lastChecked,
+      marketStatus: marketStatus ?? this.marketStatus,
+      currency: currency ?? this.currency,
+      rationale: rationale ?? this.rationale,
+    );
+  }
+}

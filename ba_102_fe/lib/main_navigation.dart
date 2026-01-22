@@ -13,6 +13,8 @@ import 'package:ba_102_fe/dashboard_page.dart';
 import 'package:ba_102_fe/services/sync_service.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 
+import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
+
 const Color primaryColor = Color(0xFF4B0082);
 
 final navIndexProvider = StateProvider<int>((ref) => 0);
@@ -25,12 +27,12 @@ class MainNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
-    final titles = ['Total Budget', 'Transactions', 'Settings'];
+    final titles = ['Total Budget', 'Transactions', 'Goals'];
 
     final pages = const [
       DashboardPage(),
       TransactionsPage(),
-      SettingsPage()
+      GoalsPage()
     ];
 
     final smsState = ref.watch(smsProvider);
@@ -226,7 +228,7 @@ class MainNavigation extends ConsumerWidget {
             ),
             IconButton(
               icon: Icon(
-                currentIndex == 2 ? Icons.settings : Icons.settings_outlined,
+                currentIndex == 2 ? Icons.track_changes : Icons.track_changes_outlined,
                 color: currentIndex == 2 ? primaryColor : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 2,

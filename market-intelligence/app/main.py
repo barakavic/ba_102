@@ -1,5 +1,13 @@
+import logging
 from fastapi import FastAPI
 from app.api import insights
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Hawkeye Market Intelligence")
 

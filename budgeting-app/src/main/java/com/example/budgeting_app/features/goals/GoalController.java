@@ -14,10 +14,13 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/goals")
-@RequiredArgsConstructor
 public class GoalController {
 
     private final GoalService goalService;
+
+    public GoalController(GoalService goalService) {
+        this.goalService = goalService;
+    }
 
     @PostMapping
     public ResponseEntity<Goal> createGoal(@RequestBody Goal goal) {

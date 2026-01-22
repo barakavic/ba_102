@@ -27,6 +27,7 @@ services:
       - DB_URL=jdbc:postgresql://db:5432/budgeting_app
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
+      - HAWKEYE_SERVICE_URL=http://hawkeye_service:8000/api/v1
     depends_on:
       db:
         condition: service_healthy
