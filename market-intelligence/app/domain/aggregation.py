@@ -13,54 +13,80 @@ class PriceAggregator:
         if not signals:
             raise ValueError("Cannot aggregate empty signals")
 
-        # 1. Normalize all prices to KES
-        normalized_prices = []
+        # 1. Normalize all prices to KES "Landed Cost"
+        # This handles the Amazon vs Jumia mismatch
+        # Import DutyCalculator here to avoid circular imports if any
+        from app.finance.duty_calculator import DutyCalculator
+
+        valid_prices = []
+        signal_map = {} # Map price -> signal for easy lookup
+
         for signal in signals:
             try:
-                price_kes = CurrencyConverter.convert(signal.price, signal.currency, "KES")
-                normalized_prices.append(price_kes)
+                landed_cost = DutyCalculator.calculate_landed_cost(
+                    price=signal.price, 
+                    currency=signal.currency, 
+                    source=signal.source
+                )
+                valid_prices.append(landed_cost)
+                signal_map[landed_cost] = signal
             except ValueError:
-                continue # Skip unsupported currencies
+                continue
 
-        if not normalized_prices:
+        if not valid_prices:
              raise ValueError("No valid signals after normalization")
 
-        # 2. Calculate Bands (Low, Medium, High)
-        # Simple logic: Low = Min, High = Max, Medium = Median
-        # In a real system, we'd use standard deviation to remove outliers
-        low_price = min(normalized_prices)
-        high_price = max(normalized_prices)
-        med_price = statistics.median(normalized_prices)
+        # 2. Outlier Detection (The "Accessory" Filter)
+        # Calculate Median First
+        median_price = statistics.median(valid_prices)
+        
+        # Define Sanity Bounds (0.5x to 2.5x of Median)
+        # e.g., if Median is 100k, ignore < 50k (likely case) and > 250k (likely bulk)
+        lower_bound = median_price * 0.5
+        upper_bound = median_price * 2.5
+        
+        filtered_prices = [p for p in valid_prices if lower_bound <= p <= upper_bound]
+        
+        # If aggressive filtering killed everything, fallback to original set
+        # (This happens if we only have wildly different prices)
+        if not filtered_prices:
+            filtered_prices = valid_prices
+            
+        # 3. Calculate Bands from Filtered Data
+        low_price = min(filtered_prices)
+        high_price = max(filtered_prices)
+        med_price = statistics.median(filtered_prices)
         
         band = PriceBand(low=low_price, medium=med_price, high=high_price)
 
-        # 3. Determine Confidence
-        # More signals = Higher confidence
-        # Tight spread = Higher confidence
-        num_signals = len(signals)
+        # 4. Determine Confidence
+        num_signals = len(filtered_prices)
+        # Spread calculation
         spread = (high_price - low_price) / low_price if low_price > 0 else 0
         
         confidence = ConfidenceLevel.LOW
-        if num_signals >= 3 and spread < 0.2: # 3+ sources and <20% spread
+        if num_signals >= 3 and spread < 0.25: 
             confidence = ConfidenceLevel.HIGH
-        elif num_signals >= 2:
+        elif num_signals >= 2 and spread < 0.4:
             confidence = ConfidenceLevel.MEDIUM
 
-        # 4. Determine Trend
-        # For now, we don't have historical data in this pass, so we default to STABLE
+         # 5. Determine Trend (Placeholder)
         trend = PriceTrend.STABLE
 
-        # 5. Identify Best Offer (Lowest Price)
-        # We need to find the signal that corresponds to the low_price
+        # 6. Identify Best Offer (Lowest Valid Price)
+        # We find the signal close to our 'low_price'
         best_signal = None
-        for signal in signals:
-            try:
-                converted = CurrencyConverter.convert(signal.price, signal.currency, "KES")
-                if abs(converted - low_price) < 0.01:
-                    best_signal = signal
-                    break
-            except:
-                continue
+        closest_diff = float('inf')
+        
+        for price, signal in signal_map.items():
+            diff = abs(price - low_price)
+            if diff < closest_diff:
+                closest_diff = diff
+                best_signal = signal
+            
+            # small optimization: exact match
+            if diff < 0.01:
+                break
 
         return PriceConsensus(
             product_id=product_id,

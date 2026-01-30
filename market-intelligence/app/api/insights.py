@@ -6,18 +6,19 @@ from app.domain.aggregation import PriceAggregator
 from app.domain.decisions import DecisionEngine
 from app.domain.market_gate import MarketGate
 from app.signals.web_scraper import WebScraper
-from app.signals.scraping.jumia import JumiaScraper
-from app.signals.scraping.amazon import AmazonScraper
 import logging
 import asyncio
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+from app.signals.registry import ScraperRegistry
+
 # Request Models
 class AnalyzeRequest(BaseModel):
     product_name: str
     user_context: UserFinancialContext
+    preferred_retailers: Optional[List[str]] = None # User can specify ["jumia", "kilimall"]
 
 class AffordabilityDTO(BaseModel):
     can_buy_now: bool
@@ -39,25 +40,36 @@ class DecisionResponse(BaseModel):
 async def analyze_product(request: AnalyzeRequest):
     """
     Orchestrates the full 'Mini-CFO' flow:
-    1. Scrapes market data (Jumia, Amazon) -> Candidates
+    1. Scrapes market data (User-selected or Default) -> Candidates
     2. Validates candidates through MarketGate (NLI) -> PriceSignals
-    3. Aggregates prices
+    3. Aggregates prices (with Duty Logic)
     4. Evaluates affordability against user context
     5. Returns a decision
     """
-    logger.info(f"Analyzing product: {request.product_name}")
+    logger.info(f"Analyzing product: {request.product_name} | Retailers: {request.preferred_retailers}")
     
     # 1. Scrape Candidates
     scraper_engine = WebScraper(headless=True)
-    jumia = JumiaScraper(scraper_engine)
-    amazon = AmazonScraper(scraper_engine)
     
+    # Determine which scrapers to run
+    target_retailers = request.preferred_retailers
+    if not target_retailers:
+        target_retailers = ScraperRegistry.list_supported_retailers()
+    
+    tasks = []
+    active_scrapers = []
+    
+    for retailer_name in target_retailers:
+        try:
+            scraper = ScraperRegistry.get_scraper(retailer_name, scraper_engine)
+            active_scrapers.append(scraper)
+            tasks.append(scraper.search_product(request.product_name))
+        except ValueError as e:
+            logger.warning(f"Skipping unknown retailer: {retailer_name}")
+
     candidates = []
     try:
-        task_jumia = jumia.search_product(request.product_name)
-        task_amazon = amazon.search_product(request.product_name)
-        
-        results = await asyncio.gather(task_jumia, task_amazon, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
         for res in results:
             if isinstance(res, Exception):

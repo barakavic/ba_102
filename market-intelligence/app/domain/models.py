@@ -41,6 +41,7 @@ class MarketCandidate:
     url: str
     price: float
     currency: str
+    is_international: bool = False
     original_price: Optional[float] = None
     snippet: Optional[str] = None
 
@@ -53,6 +54,7 @@ class PriceSignal:
     price: float
     currency: str
     source: str
+    is_international: bool
     confidence: float
     observed_at: datetime
     ttl_hours: int
@@ -65,6 +67,7 @@ class PriceSignal:
             price=candidate.price,
             currency=candidate.currency,
             source=candidate.source,
+            is_international=candidate.is_international,
             confidence=confidence,
             observed_at=datetime.now(),
             ttl_hours=24,

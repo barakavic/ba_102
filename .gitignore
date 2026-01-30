@@ -1,9 +1,10 @@
 *.vscode
-ROADMAP_PRIVATE.md
-HAWKEYE_IMPLEMENTATION_PLAN.md
 .aider*
-PHASE_2.md
+Documentation_Pri/*
+Tests/*
+
 !torch
+
 
 # Python
 __pycache__/
