@@ -14,6 +14,7 @@ import 'package:ba_102_fe/services/sync_service.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 
 import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
+import 'package:ba_102_fe/services/contact_service.dart';
 
 const Color primaryColor = Color(0xFF4B0082);
 
@@ -28,6 +29,9 @@ class MainNavigation extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
     final titles = ['Total Budget', 'Transactions', 'Goals'];
+    
+    // Initialize contacts mapping when the app starts
+    ref.watch(contactServiceProvider);
 
     final pages = const [
       DashboardPage(),

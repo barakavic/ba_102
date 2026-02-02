@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ba_102_fe/providers/categories_provider.dart';
-import 'package:ba_102_fe/services/icon_service.dart';
+import 'package:ba_102_fe/services/contact_service.dart';
+const Color priColor = Color(0xFF4B0082);
 
 class TransactionDetailsView extends ConsumerStatefulWidget {
   final AsyncValue<List<Transaction>> txAsyncValue;
@@ -380,7 +381,7 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
   }
 }
 
-class TransactionItem extends StatelessWidget {
+class TransactionItem extends ConsumerWidget {
   final Transaction transaction;
 
   const TransactionItem({
@@ -389,7 +390,21 @@ class TransactionItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final contactService = ref.watch(contactServiceProvider);
+    
+    // Attempt to match contact name
+    String displayName = transaction.description ?? transaction.vendor ?? 'Unknown';
+    
+    // If the display name looks like a number, try to get a contact name
+    if (RegExp(r'^\d+$').hasMatch(displayName.replaceAll(RegExp(r'\s+'), ''))) {
+       displayName = contactService.getContactName(displayName);
+    } else if (displayName.contains('uknown') || displayName.contains('M-Pesa User')) {
+      // Sometimes MpesaParser returns these fallbacks if it can't find a sender/recipient
+      // its better to check the raw message if we have the number there, 
+      
+    }
+    
     final isExpense = transaction.type == 'outbound' || transaction.type == 'withdrawal';
     final isIncome = transaction.type == 'inbound' || transaction.type == 'deposit';
     IconData icon = _getIcon();
@@ -402,7 +417,7 @@ class TransactionItem extends StatelessWidget {
           child: Icon(icon, color: priColor, size: 20),
         ),
         title: Text(
-          transaction.description ?? transaction.vendor ?? 'Unknown',
+          displayName,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
