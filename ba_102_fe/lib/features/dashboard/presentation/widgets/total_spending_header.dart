@@ -11,7 +11,7 @@ class TotalSpendingHeader extends ConsumerWidget {
     final summaryAsync = ref.watch(periodSummaryProvider);
     final period = ref.watch(dashboardPeriodProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
-    const Color priColor = Color(0xFF4B0082);
+    final colorScheme = Theme.of(context).colorScheme;
 
     void cyclePeriod() {
       final current = ref.read(dashboardPeriodProvider);
@@ -33,35 +33,36 @@ class TotalSpendingHeader extends ConsumerWidget {
                 onTap: cyclePeriod,
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       'Total Spendings this ',
                       style: TextStyle(
                         fontSize: 16, 
-                        color: Colors.black54,
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       period.toLowerCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16, 
-                        color: Colors.black54,
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                         decoration: TextDecoration.underline,
+                        decorationColor: colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(width: 2),
-                    Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600, size: 20),
+                    Icon(Icons.keyboard_arrow_down, color: colorScheme.onSurface.withOpacity(0.4), size: 20),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 isPrivacyMode ? '****' : NumberFormat('#,###').format(spent),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 36.0,
                   fontWeight: FontWeight.bold,
-                  color: priColor,
+                  color: colorScheme.primary,
                   letterSpacing: -0.5,
                 ),
               ),

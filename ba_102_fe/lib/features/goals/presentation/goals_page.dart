@@ -1,6 +1,5 @@
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/features/goals/providers/goal_providers.dart';
-import 'package:ba_102_fe/main_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +10,7 @@ class GoalsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goalsAsync = ref.watch(goalsProvider);
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -27,7 +27,7 @@ class GoalsPage extends ConsumerWidget {
                     return _GoalCard(goal: goal);
                   },
                 ),
-          loading: () => const Center(child: CircularProgressIndicator(color: primaryColor)),
+          loading: () => Center(child: CircularProgressIndicator(color: primary)),
           error: (err, stack) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -46,7 +46,7 @@ class GoalsPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddGoalDialog(context, ref),
-        backgroundColor: primaryColor,
+        backgroundColor: primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -120,7 +120,7 @@ class GoalsPage extends ConsumerWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text("Add Goal"),
@@ -139,6 +139,7 @@ class _GoalCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyFormat = NumberFormat.currency(symbol: "KES ", decimalDigits: 0);
     final progress = (goal.currentAmount / (goal.marketPrice ?? goal.targetAmount)).clamp(0.0, 1.0);
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -168,13 +169,13 @@ class _GoalCard extends ConsumerWidget {
                           margin: const EdgeInsets.only(top: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(goal.marketStatus).withOpacity(0.1),
+                            color: _getStatusColor(context, goal.marketStatus).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             goal.marketStatus!,
                             style: TextStyle(
-                              color: _getStatusColor(goal.marketStatus),
+                              color: _getStatusColor(context, goal.marketStatus),
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -184,7 +185,7 @@ class _GoalCard extends ConsumerWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.auto_awesome, color: primaryColor),
+                  icon: Icon(Icons.auto_awesome, color: primary),
                   onPressed: () => ref.read(goalsProvider.notifier).analyzeGoal(goal.id!),
                   tooltip: "Analyze with Hawkeye",
                 ),
@@ -201,7 +202,7 @@ class _GoalCard extends ConsumerWidget {
                 if (goal.marketPrice != null)
                   Text(
                     "Market: ${currencyFormat.format(goal.marketPrice)}",
-                    style: const TextStyle(color: primaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: primary, fontSize: 13, fontWeight: FontWeight.bold),
                   ),
               ],
             ),
@@ -211,7 +212,7 @@ class _GoalCard extends ConsumerWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(_getStatusColor(goal.marketStatus)),
+                valueColor: AlwaysStoppedAnimation<Color>(_getStatusColor(context, goal.marketStatus)),
                 minHeight: 8,
               ),
             ),
@@ -242,7 +243,7 @@ class _GoalCard extends ConsumerWidget {
     );
   }
 
-  Color _getStatusColor(String? status) {
+  Color _getStatusColor(BuildContext context, String? status) {
     switch (status) {
       case 'BUY_NOW':
         return Colors.green;
@@ -251,7 +252,7 @@ class _GoalCard extends ConsumerWidget {
       case 'UNAVAILABLE':
         return Colors.red;
       default:
-        return primaryColor;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 }

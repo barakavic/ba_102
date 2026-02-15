@@ -10,48 +10,20 @@ import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/features/transactions/presentation/widgets/transaction_details_view.dart';
-const Color priColor = Color(0xFF4B0082);
-
-final txProv = FutureProvider<List<Transaction>>((ref) async{
+final txProv = FutureProvider<List<Transaction>>((ref) async {
   final db = await DatabaseHelper.instance.database;
   final localService = TransactionsLs(db);
   return await localService.getTransactions();
-  /* try{
-   /* // try online
-    final onlineTx = await TransactionService().fetchTx();
-
- 
-    for (var tx in onlineTx){
-      await localService.insertTransaction(tx);
-    }
-    return onlineTx;  */
-       // save to offline
-    final db = await DatabaseHelper.instance.database;
-    final localService = TransactionsLs(db);
-    
-  }
-  catch(e){
-    // N/w fails rollback to sqlite
-    final db = await DatabaseHelper.instance.database;
-    final localService = await TransactionsLs(db);
-    final localTx = await localService.getTransactions();
-    return localTx;
-
-  } */
-
 });
-class TransactionsPage  extends ConsumerWidget{
+
+class TransactionsPage extends ConsumerWidget {
   const TransactionsPage({super.key});
-
- 
-
-  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
 
     final txAsyncValue = ref.watch(txProv);
-    final smsState = ref.watch(smsProvider);
 
 
     // Listen for new transactions and show the snackbar
@@ -66,10 +38,10 @@ class TransactionsPage  extends ConsumerWidget{
       length: 3, 
       child: Column(
         children: <Widget>[
-          const TabBar(
-            labelColor: priColor,
+          TabBar(
+            labelColor: colorScheme.primary,
             unselectedLabelColor: Colors.grey,
-            indicatorColor: priColor,
+            indicatorColor: colorScheme.primary,
             tabs: [
               Tab(text: 'Transactions'),
               Tab(text: 'Categories'),

@@ -1,9 +1,7 @@
 import 'dart:ui';
 import 'package:ba_102_fe/data/local/database_helper.dart';
-import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
-import 'package:ba_102_fe/features/settings/presentation/settings_page.dart';
 import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
 import 'package:ba_102_fe/providers/sms_provider.dart';
 import 'package:ba_102_fe/utils/test_data_seeder.dart';
@@ -16,7 +14,7 @@ import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart'
 import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
 import 'package:ba_102_fe/services/contact_service.dart';
 
-const Color primaryColor = Color(0xFF4B0082);
+// Removed hardcoded Theme.of(context).colorScheme.primary to support dynamic themes
 
 final navIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -33,7 +31,7 @@ class MainNavigation extends ConsumerWidget {
     // Initialize contacts mapping when the app starts
     ref.watch(contactServiceProvider);
 
-    final pages = const [
+    final pages = [
       DashboardPage(),
       TransactionsPage(),
       GoalsPage()
@@ -89,7 +87,7 @@ class MainNavigation extends ConsumerWidget {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.history, color: primaryColor),
+              icon: Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
               onPressed: () async {
                 final bool? confirm = await showDialog<bool>(
                   context: context,
@@ -100,7 +98,7 @@ class MainNavigation extends ConsumerWidget {
                       TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
                       ElevatedButton(
                         onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(backgroundColor: primaryColor, foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white),
                         child: const Text('Sync Now'),
                       ),
                     ],
@@ -150,7 +148,7 @@ class MainNavigation extends ConsumerWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
             child: Container(
-              color: Colors.white.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
               child: Column(
                 children: [
                   DrawerHeader(
@@ -159,11 +157,11 @@ class MainNavigation extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.account_balance_wallet, size: 48, color: primaryColor),
+                          Icon(Icons.account_balance_wallet, size: 48, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(height: 10),
                           Text(
                             "Command Center",
-                            style: TextStyle(color: Colors.grey.shade800, fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -190,7 +188,7 @@ class MainNavigation extends ConsumerWidget {
                   SwitchListTile(
                     secondary: Icon(
                       ref.watch(privacyModeProvider) ? Icons.visibility_off : Icons.visibility,
-                      color: primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     title: const Text("Privacy Mode"),
                     subtitle: const Text("Hide balances on screens"),
@@ -200,9 +198,9 @@ class MainNavigation extends ConsumerWidget {
                     },
                   ),
                   const Spacer(),
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text("v1.7.0 - Financial OS", style: TextStyle(color: Colors.grey)),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text("v1.7.0 - Financial OS", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
                   ),
                 ],
               ),
@@ -218,14 +216,14 @@ class MainNavigation extends ConsumerWidget {
             IconButton(
               icon: Icon(
                 currentIndex == 0 ? Icons.dashboard : Icons.dashboard_outlined,
-                color: currentIndex == 0 ? primaryColor : Colors.grey,
+                color: currentIndex == 0 ? Theme.of(context).colorScheme.primary : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 0,
             ),
             IconButton(
               icon: Icon(
                 currentIndex == 1 ? Icons.swap_horiz : Icons.swap_horiz_outlined,
-                color: currentIndex == 1 ? primaryColor : Colors.grey,
+                color: currentIndex == 1 ? Theme.of(context).colorScheme.primary : Colors.grey,
                 size: 32, // Make the center action slightly larger
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 1,
@@ -233,7 +231,7 @@ class MainNavigation extends ConsumerWidget {
             IconButton(
               icon: Icon(
                 currentIndex == 2 ? Icons.track_changes : Icons.track_changes_outlined,
-                color: currentIndex == 2 ? primaryColor : Colors.grey,
+                color: currentIndex == 2 ? Theme.of(context).colorScheme.primary : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 2,
             ),

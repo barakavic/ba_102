@@ -10,21 +10,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-const Color priColor = Color(0xFF4B0082);
-
-
-
 class CategoriesPage extends ConsumerWidget {
   const CategoriesPage({super.key});
 
-  Color _getCategoryColor(Category category) {
+  Color _getCategoryColor(BuildContext context, Category category) {
     if (category.id == -1) return Colors.orange;
     if (category.color != null) {
       try {
         return Color(int.parse(category.color!));
       } catch (_) {}
     }
-    return priColor;
+    return Theme.of(context).colorScheme.primary;
   }
 
   Map<String, double> _getCategoryStats(Category parent, List<Category> allCategories) {
@@ -106,7 +102,7 @@ class CategoriesPage extends ConsumerWidget {
                     final hasChildren = allCategories.any((c) => c.parentId == category.id);
                     
                     return ListTile(
-                      leading: Icon(IconService.getIcon(parent.icon, parent.name), color: _getCategoryColor(parent)),
+                      leading: Icon(IconService.getIcon(parent.icon, parent.name), color: _getCategoryColor(context, parent)),
                       title: Text(parent.name),
                       enabled: !hasChildren,
                       subtitle: hasChildren ? const Text("Cannot move: has sub-categories", style: TextStyle(fontSize: 10, color: Colors.orange)) : null,
@@ -131,13 +127,16 @@ class CategoriesPage extends ConsumerWidget {
   }
 
   void _showSubCategories(BuildContext context, WidgetRef ref, Category parent, List<Category> subCategories, List<Category> allCategories) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final categoryColor = _getCategoryColor(context, parent);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
         child: Column(
@@ -149,10 +148,10 @@ class CategoriesPage extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(parent).withOpacity(0.1),
+                    color: categoryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(IconService.getIcon(parent.icon, parent.name), color: _getCategoryColor(parent), size: 24),
+                  child: Icon(IconService.getIcon(parent.icon, parent.name), color: categoryColor, size: 24),
                 ),
                 const SizedBox(width: 15),
                 Column(
@@ -164,7 +163,7 @@ class CategoriesPage extends ConsumerWidget {
                     ),
                     Text(
                       "Sub-categories",
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                      style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 12),
                     ),
                   ],
                 ),
@@ -182,7 +181,6 @@ class CategoriesPage extends ConsumerWidget {
                 itemCount: subCategories.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    // Option to view parent's direct transactions
                     return ListTile(
                       leading: const Icon(Icons.list_alt, color: Colors.grey),
                       title: Text("View all ${parent.name} items"),
@@ -196,8 +194,9 @@ class CategoriesPage extends ConsumerWidget {
                     );
                   }
                   final sub = subCategories[index - 1];
+                  final subColor = _getCategoryColor(context, sub);
                   return ListTile(
-                    leading: Icon(IconService.getIcon(sub.icon, sub.name), color: _getCategoryColor(sub)),
+                    leading: Icon(IconService.getIcon(sub.icon, sub.name), color: subColor),
                     title: Text(sub.name),
                     subtitle: Text("${sub.transactions.length} items"),
                     trailing: Row(
@@ -279,6 +278,7 @@ class CategoriesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -312,10 +312,10 @@ class CategoriesPage extends ConsumerWidget {
                 itemCount: topLevelCategories.length,
                 itemBuilder: (context, index) {
                   final category = topLevelCategories[index];
-                  final color = _getCategoryColor(category);
+                  final color = _getCategoryColor(context, category);
                   final icon = IconService.getIcon(category.icon, category.name);
                   final subCategories = categories.where((c) => c.parentId == category.id).toList();
-                  final stats = _getCategoryStats(category, categories); // Get both spent and received
+                  final stats = _getCategoryStats(category, categories);
                   final totalItems = _getTotalItems(category, categories);
 
                   return GestureDetector(
@@ -333,7 +333,7 @@ class CategoriesPage extends ConsumerWidget {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -351,7 +351,7 @@ class CategoriesPage extends ConsumerWidget {
                               top: 4,
                               right: 4,
                               child: PopupMenuButton<String>(
-                                icon: Icon(Icons.more_vert, size: 18, color: Colors.grey.shade400),
+                                icon: Icon(Icons.more_vert, size: 18, color: colorScheme.onSurface.withOpacity(0.4)),
                                 onSelected: (value) async {
                                   if (value == 'edit') {
                                     Navigator.push(
@@ -411,10 +411,10 @@ class CategoriesPage extends ConsumerWidget {
                                 const SizedBox(height: 12),
                                 Text(
                                   category.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 15.0,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: colorScheme.onSurface,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -423,7 +423,7 @@ class CategoriesPage extends ConsumerWidget {
                                   '$totalItems items',
                                   style: TextStyle(
                                     fontSize: 11.0,
-                                    color: Colors.grey.shade500,
+                                    color: colorScheme.onSurface.withOpacity(0.5),
                                   ),
                                 ),
                                 if (subCategories.isNotEmpty)
@@ -445,7 +445,7 @@ class CategoriesPage extends ConsumerWidget {
                                   children: [
                                     Column(
                                       children: [
-                                        const Text("RECEIVED", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                        Text("RECEIVED", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: colorScheme.onSurface.withOpacity(0.4))),
                                         Text(
                                           NumberFormat('#,###').format(stats['received']),
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green),
@@ -455,7 +455,7 @@ class CategoriesPage extends ConsumerWidget {
                                     const SizedBox(width: 12),
                                     Column(
                                       children: [
-                                        const Text("SPENT", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                        Text("SPENT", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: colorScheme.onSurface.withOpacity(0.4))),
                                         Text(
                                           NumberFormat('#,###').format(stats['spent']),
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red),
@@ -481,14 +481,14 @@ class CategoriesPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_category_fab',
-        backgroundColor: priColor,
+        backgroundColor: colorScheme.primary,
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CatFormPage(planId: 0)),
           );
         },
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: colorScheme.onPrimary),
       ),
     );
   }
