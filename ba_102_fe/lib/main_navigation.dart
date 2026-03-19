@@ -11,7 +11,7 @@ import 'package:ba_102_fe/dashboard_page.dart';
 import 'package:ba_102_fe/services/sync_service.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 
-import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
+// import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
 import 'package:ba_102_fe/services/contact_service.dart';
 
 // Removed hardcoded Theme.of(context).colorScheme.primary to support dynamic themes
@@ -26,7 +26,7 @@ class MainNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
-    final titles = ['Total Budget', 'Transactions', 'Goals'];
+    final titles = ['Total Budget', 'Transactions'/*, 'Goals'*/];
     
     // Initialize contacts mapping when the app starts
     ref.watch(contactServiceProvider);
@@ -34,7 +34,7 @@ class MainNavigation extends ConsumerWidget {
     final pages = [
       DashboardPage(),
       TransactionsPage(),
-      GoalsPage()
+      // GoalsPage()
     ];
 
     final smsState = ref.watch(smsProvider);
@@ -228,6 +228,7 @@ class MainNavigation extends ConsumerWidget {
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 1,
             ),
+            /*
             IconButton(
               icon: Icon(
                 currentIndex == 2 ? Icons.track_changes : Icons.track_changes_outlined,
@@ -235,6 +236,7 @@ class MainNavigation extends ConsumerWidget {
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 2,
             ),
+            */
           ],
         ),
       ),
