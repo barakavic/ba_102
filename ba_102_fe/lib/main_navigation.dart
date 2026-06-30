@@ -86,59 +86,7 @@ class MainNavigation extends ConsumerWidget {
                 ],
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
-              onPressed: () async {
-                final bool? confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Sync M-Pesa History'),
-                    content: const Text('This will scan your SMS inbox for new M-Pesa messages. Continue?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white),
-                        child: const Text('Sync Now'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirm == true && context.mounted) {
-                  // 1. Local SMS Sync
-                  int count = await ref.read(smsProvider.notifier).syncHistoricalMessages();
-                  
-                  // 2. Online Cloud Sync (Silent background task)
-                  final isSyncEnabled = ref.read(cloudSyncProvider);
-                  await SyncService().syncAll(isSyncEnabled);
-
-                  ref.invalidate(mpesaBalanceProvider);
-                  ref.invalidate(mpesaBalanceHistoryProvider);
-                  ref.invalidate(periodSummaryProvider);
-                  ref.invalidate(topCategoriesProvider);
-                  
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(count > 0 ? 'Added $count new transactions.' : 'No new transactions found.'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.bug_report, color: Colors.orange),
-              onPressed: () async {
-                final db = await DatabaseHelper.instance.database;
-                await TestDataSeeder.seedTestTransactions(db);
-                ref.invalidate(txProv);
-                ref.invalidate(plansProvider);
-              },
-            ),
-          ],
+            ],
         ],
       ),
       drawer: SizedBox(

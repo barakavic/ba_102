@@ -178,4 +178,19 @@ class TransactionsLs {
     );
     return maps.map((m) => Transaction.fromMap(m)).toList();
   }
+  
+  Future<DateTime?> getlastTransactionDate() async{
+    final List<Map<String, dynamic>> maps = await db.query(
+      'transactions',
+      columns: ['date'],
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty){
+      return DateTime.fromMillisecondsSinceEpoch(maps.first['date'] as int);
+
+    }
+    return null;
+  }
 }

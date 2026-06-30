@@ -50,22 +50,27 @@ class SmsNotifier extends StateNotifier<SmsState> {
     _initializeListener();
   }
 
-  void _initializeListener(){
-    _smsListener = SmsListenerService(onMessageReceived: _handleIncomingSms,
-    );
+  void _initializeListener() async{
+    _smsListener = SmsListenerService(onMessageReceived: _handleIncomingSms);
+      try{
+    await _smsListener.initialize();
+    state = state.copyWith(isListening: true);
+    print("Sms Listener Started Successfully");
 
-    _smsListener.initialize().then((_){
-      state = state.copyWith(isListening: true);
-      print("Sms Listener Started Successfully");
+    // Auto-pull messages
+    final db = await DatabaseHelper.instance.database;
+    final localService = TransactionsLs(db);
+    final lastDate = await localService.getlastTransactionDate();
 
-
-    }).catchError((error){
-      state = state.copyWith(error: error.toString());
-      print("Sms Listener failed: $error");
-
-    });
+    syncHistoricalMessages(since: lastDate);
 
   }
+  catch(err){
+    state = state.copyWith(error: err.toString());
+    print("Sms listener failed, $err");
+  }
+  }
+
 
   void _handleIncomingSms(Map<String,dynamic> smsData, {bool isSimulated = false}) async{
     print("Dart: _handleIncomingSms triggered with data: $smsData");
@@ -206,28 +211,40 @@ class SmsNotifier extends StateNotifier<SmsState> {
       if (oldMessages.isEmpty) return 0;
 
       final db = await DatabaseHelper.instance.database;
-      final localService = TransactionsLs(db);
       int newCount = 0;
 
-      for (var sms in oldMessages) {
-        final mpesaTx = _mpesaParser.parseMessage(sms['body'], sms['timestamp']);
-        
-        if (mpesaTx != null) {
-          // Check for duplicates using M-Pesa reference
-          final existing = await db.query(
-            'transactions',
-            where: 'mpesa_reference = ?',
-            whereArgs: [mpesaTx.reference],
-          );
+      // Chunk Message Processing
+      const chunksize = 20;
+      for (int i=0; i<= oldMessages.length; i+= chunksize){
+        int end = (i+chunksize < oldMessages.length) ? i + chunksize : oldMessages.length;
 
-          if (existing.isEmpty) {
-            await _saveToDatabase(mpesaTx);
-            newCount++;
+        var chunk = oldMessages.sublist(i, end);
+
+        for (var sms in chunk){
+          final mpesaTx = _mpesaParser.parseMessage(sms['body'], sms['timestampMillis']);
+          
+          if (mpesaTx != null){
+            final existing = await db.query(
+              'transactions',
+              where: 'mpesa_reference = ?',
+              whereArgs: [mpesaTx.reference],
+            );
+
+
+            if (existing.isEmpty){
+              await _saveToDatabase(mpesaTx);
+              newCount++;
+            }
+
           }
+
         }
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
       }
 
-      if (newCount > 0) {
+      if (newCount > 0){
         ref.invalidate(txProv);
         ref.invalidate(mpesaBalanceProvider);
         ref.invalidate(mpesaBalanceHistoryProvider);
@@ -235,10 +252,10 @@ class SmsNotifier extends StateNotifier<SmsState> {
         ref.invalidate(topCategoriesProvider);
         ref.invalidate(recentTransactionsProvider);
       }
-      
+
       return newCount;
-    } catch (e) {
-      print("Sync Historical Messages Error: $e");
+    } catch(e){
+      print('Sync Historical Messages error, $e');
       return 0;
     }
   }
