@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:ba_102_fe/utils/app_logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
@@ -12,7 +13,7 @@ class SyncService {
     try {
       // Check if sync is enabled in settings
       if (!isSyncEnabled) {
-        print("Sync: Cloud synchronization is disabled in settings.");
+        AppLogger.w("Sync: Cloud synchronization is disabled in settings.");
         return;
       }
 
@@ -23,24 +24,24 @@ class SyncService {
       final unsynced = await localService.getUnsyncedTransactions();
       
       if (unsynced.isEmpty) {
-        print("Sync: No pending transactions to sync.");
+        AppLogger.i("Sync: No pending transactions to sync.");
         return;
       }
 
-      print("Sync: Starting sync for ${unsynced.length} transactions...");
+      AppLogger.i("Sync: Starting sync for ${unsynced.length} transactions...");
 
       for (var tx in unsynced) {
         final success = await _syncSingleTransaction(tx);
         if (success) {
           // 2. Update local status to synced
           await localService.updateTransaction(tx.copyWith(isSynced: true));
-          print("Sync: Successfully synced transaction ${tx.clientId}");
+          AppLogger.i("Sync: Successfully synced transaction ${tx.clientId}");
         } else {
-          print("Sync: Failed to sync transaction ${tx.clientId}");
+          AppLogger.e("Sync: Failed to sync transaction ${tx.clientId}");
         }
       }
     } catch (e) {
-      print("Sync Error: $e");
+      AppLogger.e("Sync Error: $e");
     }
   }
 
@@ -55,11 +56,11 @@ class SyncService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else {
-        print("Sync Server Error: ${response.statusCode} - ${response.body}");
+        AppLogger.e("Sync Server Error: ${response.statusCode} - ${response.body}");
         return false;
       }
     } catch (e) {
-      print("Sync Network Error: $e");
+      AppLogger.e("Sync Network Error: $e");
       return false;
     }
   }

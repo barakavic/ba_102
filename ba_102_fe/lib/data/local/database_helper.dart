@@ -1,5 +1,6 @@
 // import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:ba_102_fe/utils/app_logger.dart';
 import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 // import 'package:csv/csv.dart';
@@ -273,7 +274,7 @@ FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
       }
     catch(_) {}
     }
-    print('Database upgraded from $oldVersion to $newVersion');
+    AppLogger.i('Database upgraded from $oldVersion to $newVersion');
   }
 
 

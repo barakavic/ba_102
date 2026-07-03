@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:ba_102_fe/utils/app_logger.dart';
 
 enum TransactionType { inbound, outbound, withdrawal, deposit}
 
@@ -27,38 +28,38 @@ class MpesaTransaction {
 
 class MpesaParserService {
   MpesaTransaction? parseMessage(String message, int timestampMillis){
-    print("Parsing message: $message");
+    AppLogger.d("Parsing message: $message");
     try{
       if (message.contains(RegExp(r'you have received|received', caseSensitive: false)) && message.contains('Ksh')){
-        print("Detected as Received Money");
+        AppLogger.i("Detected as Received Money");
         return _parseReceivedMoney(message, timestampMillis);
       }
 
       if( message.contains(RegExp(r'sent to|you have sent|paid to|payment to', caseSensitive: false)) && message.contains('Ksh')){
-        print("Detected as Sent Money (including Paid To)");
+        AppLogger.i("Detected as Sent Money (including Paid To)");
         return _parseSentMoney(message, timestampMillis);
       }
 
       if (message.contains(RegExp(r'bought|purchased', caseSensitive: false)) && message.contains('Ksh')){
-        print("Detected as Purchase");
+        AppLogger.i("Detected as Purchase");
         return _parsePurchase(message, timestampMillis);
       }
 
       if (message.contains(RegExp(r'withdrawn|withraw', caseSensitive: false)) && message.contains('Ksh')){
-        print("Detected as Withdrawal");
+        AppLogger.i("Detected as Withdrawal");
         return _parseWithdrawal(message, timestampMillis);
       }
 
       if (message.contains(RegExp(r'deposited|deposit', caseSensitive: false)) && message.contains('Ksh')){
-        print("Detected as Deposit");
+        AppLogger.i("Detected as Deposit");
         return _parseDeposit(message, timestampMillis);
       }
 
-      print("Message did not match any known M-Pesa patterns");
+      AppLogger.w("Message did not match any known M-Pesa patterns");
       return null;
     }
     catch (e){
-      print("Error Parsing M-Pesa Message: $e");
+      AppLogger.e("Error Parsing M-Pesa Message: $e");
       return null;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import 'package:ba_102_fe/data/models/models.dart';
+import 'package:ba_102_fe/utils/app_logger.dart';
 
 class TransactionsLs {
 
@@ -16,7 +17,7 @@ class TransactionsLs {
         );
 
         if(existing.isNotEmpty){
-          print('Duplicate m-pesa transaction: ${transaction.mpesaReference}');
+          AppLogger.w('Duplicate m-pesa transaction: ${transaction.mpesaReference}');
           return existing.first['id'] as int;
         }
       }
@@ -30,7 +31,7 @@ class TransactionsLs {
     return id;
     }
     catch(e){
-      print('insertTransaction Error: $e');
+      AppLogger.e('insertTransaction Error: $e');
       rethrow;
     }
  }

@@ -1,4 +1,5 @@
 import 'package:ba_102_fe/data/models/shopping_list_model.dart';
+import 'package:ba_102_fe/utils/app_logger.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ShoppingLs{
@@ -18,7 +19,7 @@ class ShoppingLs{
 
     }
     catch(e){
-      print('Error Creating, Shopping List: $e');
+      AppLogger.e('Error Creating, Shopping List: $e');
       rethrow;
    }
   }

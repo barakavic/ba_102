@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import 'package:ba_102_fe/utils/app_logger.dart';
 import "package:flutter/services.dart";
 import "package:permission_handler/permission_handler.dart";
 
@@ -17,11 +18,11 @@ class SmsListenerService {
 
     if (status.isGranted){
       platform.setMethodCallHandler(_handleMethodCall);
-      print("SMS Listener initialized");
+      AppLogger.i("SMS Listener initialized");
 
     }
     else{
-      print("SMS Permission denied");
+      AppLogger.w("SMS Permission denied");
     }
   }
 
@@ -43,7 +44,7 @@ class SmsListenerService {
         });
         return result.map((e) => Map<String, dynamic>.from(e)).toList();
       } on PlatformException catch (e) {
-        print("Failed to fetch historical SMS: ${e.message}");
+        AppLogger.e("Failed to fetch historical SMS: ${e.message}");
         return [];
       }
     }

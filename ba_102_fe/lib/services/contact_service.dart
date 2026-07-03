@@ -1,6 +1,7 @@
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ba_102_fe/utils/app_logger.dart';
 
 class ContactService {
   Map<String, String> _contactsMap = {};
@@ -33,10 +34,10 @@ class ContactService {
         }
         _contactsMap = tempMap;
         _isInitialized = true;
-        print("Contacts synced: ${_contactsMap.length} numbers mapped.");
+        AppLogger.i("Contacts synced: ${_contactsMap.length} numbers mapped.");
       }
     } catch (e) {
-      print("Error syncing contacts: $e");
+      AppLogger.e("Error syncing contacts: $e");
     }
   }
 

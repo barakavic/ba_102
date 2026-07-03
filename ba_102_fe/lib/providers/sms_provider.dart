@@ -1,4 +1,5 @@
 import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
+import 'package:ba_102_fe/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/services/Sms_Listener_Service.dart';
 import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
@@ -55,7 +56,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
       try{
     await _smsListener.initialize();
     state = state.copyWith(isListening: true);
-    print("Sms Listener Started Successfully");
+    AppLogger.i("Sms Listener Started Successfully");
 
     // Auto-pull messages
     final db = await DatabaseHelper.instance.database;
@@ -67,23 +68,23 @@ class SmsNotifier extends StateNotifier<SmsState> {
   }
   catch(err){
     state = state.copyWith(error: err.toString());
-    print("Sms listener failed, $err");
+    AppLogger.e("Sms listener failed, $err");
   }
   }
 
 
   void _handleIncomingSms(Map<String,dynamic> smsData, {bool isSimulated = false}) async{
-    print("Dart: _handleIncomingSms triggered with data: $smsData");
+    AppLogger.d("Dart: _handleIncomingSms triggered with data: $smsData");
     final String body = smsData['body'];
     final int timestamp = smsData['timestamp'];
 
-    print ("Sms received: $body");
+    AppLogger.d("Sms received: $body");
 
     // Parse M-Pesa message
     final mpesaTransaction = _mpesaParser.parseMessage(body, timestamp);
 
     if (mpesaTransaction != null){
-      print("Parsed Mpesa: ${mpesaTransaction.reference} - KES ${mpesaTransaction.amount}");
+      AppLogger.i("Parsed Mpesa: ${mpesaTransaction.reference} - KES ${mpesaTransaction.amount}");
 
       state = state.copyWith(
         lastTransaction: mpesaTransaction,
@@ -105,7 +106,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
       SyncService().syncAll(isSyncEnabled);
     }
     else{
-      print('Failed to parse M-Pesa message');
+      AppLogger.w('Failed to parse M-Pesa message');
       
     }
   }
@@ -189,13 +190,13 @@ class SmsNotifier extends StateNotifier<SmsState> {
         rawSmsMessage: mpesaTransaction.rawMessage,
       );
 
-      print("Saving transaction to DB: ${transaction.mpesaReference}");
+      AppLogger.d("Saving transaction to DB: ${transaction.mpesaReference}");
       final id = await localService.insertTransaction(transaction);
-      print("Transaction saved to database with ID: $id");
+      AppLogger.i("Transaction saved to database with ID: $id");
 
     }
     catch(e){
-      print("Error saving transaction: $e");
+      AppLogger.e("Error saving transaction: $e");
       state = state.copyWith(error: "Failed to save transaction : $e");
 
     }
@@ -255,7 +256,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
 
       return newCount;
     } catch(e){
-      print('Sync Historical Messages error, $e');
+      AppLogger.e('Sync Historical Messages error, $e');
       return 0;
     }
   }
