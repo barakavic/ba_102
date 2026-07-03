@@ -24,7 +24,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 10,
+      version: 11,
       
     
 
@@ -92,6 +92,33 @@ CREATE TABLE vendor_mappings (
     vendor_name TEXT PRIMARY KEY,
     category_id INTEGER,
     FOREIGN KEY (category_id) REFERENCES budget_category(id)
+);
+''');
+
+await db.execute('''
+CREATE TABLE shopping_lists (
+id TEXT PRIMARY KEY
+title TEXT,
+color_swatch INTEGER,
+is_temporary INTEGER DEFAULT 0,
+createdAt INTEGER
+);
+
+''');
+
+await db.execute('''
+CREATE TABLE shopping_items (
+id TEXT PRIMARY KEY,
+list_id TEXT NOT NULL,
+name TEXT NOT NULL,
+category TEXT,
+estimated_price REAL DEFAULT 0.0,
+quantity INTEGER DEFAULT 1,
+is_requried INTEGER DEFAULT 0,
+is_bought INTEGER DEFAULT 0,
+is_permanent INTEGER DEFAULT 1,
+FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
+
 );
 ''');
 
@@ -214,57 +241,43 @@ CREATE TABLE vendor_mappings (
         }
       } catch (_) {}
     }
+    if (oldVersion < 11){
+      try {
+        await db.execute('''
+CREATE TABLE shopping_lists (
+id TEXT PRIMARY KEY
+title TEXT,
+color_swatch INTEGER,
+is_temporary INTEGER DEFAULT 0,
+createdAt INTEGER
+);
+
+''');
+
+await db.execute('''
+CREATE TABLE shopping_items (
+id TEXT PRIMARY KEY,
+list_id TEXT NOT NULL,
+name TEXT NOT NULL,
+category TEXT,
+estimated_price REAL DEFAULT 0.0,
+quantity INTEGER DEFAULT 1,
+is_requried INTEGER DEFAULT 0,
+is_bought INTEGER DEFAULT 0,
+is_permanent INTEGER DEFAULT 1,
+FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
+
+);
+''');
+
+      }
+    catch(_) {}
+    }
     print('Database upgraded from $oldVersion to $newVersion');
   }
 
 
-  /* Future<void> _importCSV(Database db, String assetPath, String tableName) async{
-    final rawData = await rootBundle.loadString(assetPath);
-    final csvTable = const CsvToListConverter().convert(rawData, eol:'\n');
-
-  // Imports data fromthe csv skipping the header row
-  for(int i = 1; i<csvTable.length; i++){
-    final row = csvTable[i];
-    final values = <String, dynamic>{};
-
-    switch(tableName){
-      case 'budget_plans':
-      values.addAll({
-        'id': row[0],
-        'name': row[1],
-        'start_date': row[2],
-        'end_date': row[3],
-        'status': row[5]
-      });
-      break;
-      case 'budget_category':
-      values.addAll({
-        'id': row[0],
-        'name': row[1],
-        'limit_amount': row[2],
-        'spent_amount': row[3],
-        'status': row[4],
-        'plan_id': row[5]
-      });
-      break;
-
-      case 'transactions':
-      values.addAll({
-        'id': row[0],
-        'description': row[1],
-        'amount': row[2],
-        'date': row[3],
-        'category_id': row[4],
-        'plan_id':row[5]
-      });
-      break;
-
-    }
-
-    await db.insert(tableName, values);
-  }
- */
-
+ 
 Future <void> close() async {
   final db = await instance.database;
   db.close();
