@@ -1,14 +1,10 @@
 import 'dart:ui';
-import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
-import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
 import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
 import 'package:ba_102_fe/providers/sms_provider.dart';
-import 'package:ba_102_fe/utils/test_data_seeder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
-import 'package:ba_102_fe/services/sync_service.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 
 // import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
