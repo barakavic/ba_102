@@ -32,7 +32,7 @@ class ShoppingListModel {
       title: map['title'],
       colorSwatch: map['color_swatch'],
       isTemporary: map['is_temporary'] == 1,
-      createdAt: DateTime.fromMicrosecondsSinceEpoch(map['createdAt'])
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
       );
   }
 

@@ -115,7 +115,7 @@ name TEXT NOT NULL,
 category TEXT,
 estimated_price REAL DEFAULT 0.0,
 quantity INTEGER DEFAULT 1,
-is_requried INTEGER DEFAULT 0,
+is_required INTEGER DEFAULT 0,
 is_bought INTEGER DEFAULT 0,
 is_permanent INTEGER DEFAULT 1,
 FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
