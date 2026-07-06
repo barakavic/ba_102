@@ -3,7 +3,6 @@ import 'package:ba_102_fe/data/local/shopping_ls.dart';
 import 'package:ba_102_fe/data/models/shopping_list_model.dart';
 import 'package:ba_102_fe/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sqflite/sqlite_api.dart';
 
  final shoppingLsProvider = FutureProvider<ShoppingLs>((ref) async{
     try {
@@ -21,16 +20,56 @@ import 'package:sqflite/sqlite_api.dart';
 
   class ShoppingListNotifier extends AsyncNotifier<List<ShoppingListModel>>
   {
+    int _offset = 0;
 
   @override
   Future <List<ShoppingListModel>> build() async{
-    final service = await ref.read(shoppingLsProvider.future);
-    return await service.getShoppingLists();
+    final service = await ref.watch(shoppingLsProvider.future);
+    _offset = 0;
+    return await service.getShoppingLists(limit: 20, offset: _offset);
   } 
-  
+
+
+
+  Future<void> updateList(ShoppingListModel updatedList)async{
+    final service = await ref.read(shoppingLsProvider.future);
+    await service.updateList(updatedList);
+    ref.invalidateSelf();
   }
 
-  final ShoppingListProvider = AsyncNotifierProvider<ShoppingListNotifier, List<ShoppingListModel>>((){
+  Future<void> deleteList(List<String> listId) async{
+    final service = await ref.read(shoppingLsProvider.future);
+    await service.deleteShoppingList(listId);
+
+    ref.invalidateSelf();
+    
+  }
+  
+
+  Future<void> clearAllLists() async{
+    final service = await ref.read(shoppingLsProvider.future);
+    await service.clearAllLists();
+
+    ref.invalidateSelf();
+  }
+
+    Future<void> loadMore() async{
+    final service = await ref.read(shoppingLsProvider.future);
+
+    _offset+=20;
+
+    final nextBatch = await service.getShoppingLists(limit: 20, offset: _offset);
+
+    final currentList = state.value ?? [];
+
+    state = AsyncData([...currentList, ...nextBatch]);
+
+  }
+  }
+
+  
+
+  final shoppingListsProvider = AsyncNotifierProvider<ShoppingListNotifier, List<ShoppingListModel>>((){
     return ShoppingListNotifier();
 
   });

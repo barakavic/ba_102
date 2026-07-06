@@ -73,6 +73,36 @@ catch(e, st){
     }
 
   }
+
+  Future<int> deleteShoppingList(List<String> listId) async{
+   
+    try {
+      final shoppingListDelStatus = await db.delete('shopping_lists',
+      where: 'id IN (${List.filled(listId.length, '?').join(',')})',
+      whereArgs: listId
+      );
+
+      return shoppingListDelStatus;
+      
+      
+    } 
+    catch (e, st) {
+      AppLogger.e('Failed to delete list(s)', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+  Future<int> clearAllLists()async{
+    try {
+      final deleteState = await db.delete('shopping_lists');
+      return deleteState;
+
+    } catch (e, st) {
+      AppLogger.e('Failed to clear all databases', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  // List Item Section
   Future<int> updateListItem(ShoppingListItemModel item) async{
     try {
       final updateState = await db.update(
@@ -89,16 +119,6 @@ catch(e, st){
     }
   }
 
-  Future<int> clearAllLists()async{
-    try {
-      final deleteState = await db.delete('shopping_lists');
-      return deleteState;
-
-    } catch (e, st) {
-      AppLogger.e('Failed to clear all databases', error: e, stackTrace: st);
-      rethrow;
-    }
-  }
   Future<int> deleteShoppingListItem(List<String> itemIds) async{
 
     try {
