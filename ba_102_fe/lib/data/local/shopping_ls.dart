@@ -39,22 +39,6 @@ class ShoppingLs{
     
   }
 
-  Future<List<ShoppingListItemModel>> getItemsForShoppingList(String listId) async
-  {
-    try{
-      final maps = await db.query(
-      'shopping_items',
-      where: 'list_id = ?',
-      whereArgs: [listId],
-    );
-
-    return maps.map((map) => ShoppingListItemModel.fromMap(map)).toList();
-}
-catch(e, st){
-  AppLogger.e('Failed to fetch shopping list items', error: e, stackTrace: st);
-  rethrow;
-}
-  }
 
   Future<int> updateList(ShoppingListModel list) async{
     try {
@@ -103,6 +87,24 @@ catch(e, st){
   }
 
   // List Item Section
+    Future<List<ShoppingListItemModel>> getItemsForShoppingList(String listId) async
+  {
+    try{
+      final maps = await db.query(
+      'shopping_items',
+      where: 'list_id = ?',
+      whereArgs: [listId],
+    );
+
+    return maps.map((map) => ShoppingListItemModel.fromMap(map)).toList();
+}
+catch(e, st){
+  AppLogger.e('Failed to fetch shopping list items', error: e, stackTrace: st);
+  rethrow;
+}
+  }
+
+
   Future<int> updateListItem(ShoppingListItemModel item) async{
     try {
       final updateState = await db.update(

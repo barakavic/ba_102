@@ -10,6 +10,21 @@ class ShoppingListItemProvider extends FamilyAsyncNotifier<List<ShoppingListItem
     return await service.getItemsForShoppingList(listId);
 
   }
+
+  Future<void> deleteShoppingItem(List<String> id) async{
+    final service = await ref.read(shoppingLsProvider.future);
+    await service.deleteShoppingListItem(id);
+
+    ref.invalidateSelf();
+    
+  }
+
+  Future<void> updateShoppingListItem(ShoppingListItemModel item) async{
+    final service = await ref.read(shoppingLsProvider.future);
+    await service.updateListItem(item);
+
+    ref.invalidateSelf();
+  }
 } 
 
 final shoppingListItemsProvider = AsyncNotifierProvider.family<ShoppingListItemProvider, List<ShoppingListItemModel>, String>(
