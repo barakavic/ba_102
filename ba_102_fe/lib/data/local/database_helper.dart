@@ -96,7 +96,7 @@ CREATE TABLE vendor_mappings (
 
 await db.execute('''
 CREATE TABLE shopping_lists (
-id TEXT PRIMARY KEY
+id TEXT PRIMARY KEY,
 title TEXT,
 color_swatch INTEGER,
 is_temporary INTEGER DEFAULT 0,
@@ -116,7 +116,7 @@ quantity INTEGER DEFAULT 1,
 is_required INTEGER DEFAULT 0,
 is_bought INTEGER DEFAULT 0,
 is_permanent INTEGER DEFAULT 1,
-FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
+FOREIGN KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
 
 );
 ''');
@@ -244,7 +244,7 @@ FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
       try {
         await db.execute('''
 CREATE TABLE shopping_lists (
-id TEXT PRIMARY KEY
+id TEXT PRIMARY KEY,
 title TEXT,
 color_swatch INTEGER,
 is_temporary INTEGER DEFAULT 0,
@@ -264,7 +264,7 @@ quantity INTEGER DEFAULT 1,
 is_requried INTEGER DEFAULT 0,
 is_bought INTEGER DEFAULT 0,
 is_permanent INTEGER DEFAULT 1,
-FOREIGN_KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
+FOREIGN KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
 
 );
 ''');
