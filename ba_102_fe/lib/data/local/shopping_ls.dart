@@ -87,6 +87,24 @@ class ShoppingLs{
   }
 
   // List Item Section
+
+    Future<int> createShoppingListItem(ShoppingListItemModel shoppingItem) async{
+      try{
+        final id = await db.insert('shopping_items',
+      shoppingItem.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace 
+      
+      );
+      return id;
+      }
+      catch(e, st){
+        AppLogger.e('Failed to create shopping list item', error: e, stackTrace: st);
+        rethrow;
+
+      }
+
+    }
+
     Future<List<ShoppingListItemModel>> getItemsForShoppingList(String listId) async
   {
     try{
