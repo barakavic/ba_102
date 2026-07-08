@@ -29,6 +29,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
     return await service.getShoppingLists(limit: 20, offset: _offset);
   } 
 
+  Future<void> createList(ShoppingListModel list) async{
+    final service = await ref.read(shoppingLsProvider.future);
+
+    await service.createShoppingList(list);
+
+    ref.invalidateSelf();
+  }
+
 
 
   Future<void> updateList(ShoppingListModel updatedList)async{

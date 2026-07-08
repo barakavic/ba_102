@@ -1,4 +1,3 @@
-import "package:flutter/material.dart";
 import 'package:ba_102_fe/utils/app_logger.dart';
 import "package:flutter/services.dart";
 import "package:permission_handler/permission_handler.dart";

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
-import 'package:ba_102_fe/features/plans/providers/plan_providers.dart';
+import 'package:ba_102_fe/providers/plan_providers.dart';
 import 'package:ba_102_fe/services/icon_service.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:flutter/material.dart';

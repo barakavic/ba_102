@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:ba_102_fe/utils/app_logger.dart';
 
 enum TransactionType { inbound, outbound, withdrawal, deposit}

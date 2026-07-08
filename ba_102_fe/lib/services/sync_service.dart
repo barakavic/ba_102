@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 import 'package:ba_102_fe/config/api_config.dart';
 
 class SyncService {
