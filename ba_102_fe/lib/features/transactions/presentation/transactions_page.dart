@@ -10,11 +10,40 @@ import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/features/transactions/presentation/widgets/transaction_details_view.dart';
-final txProv = FutureProvider<List<Transaction>>((ref) async {
-  final db = await DatabaseHelper.instance.database;
-  final localService = TransactionsLs(db);
-  return await localService.getTransactions();
-});
+class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
+  static const _pageSize = 50;
+  int _offset = 0;
+  bool _hasMore = true;
+
+  @override
+  Future<List<Transaction>> build() async {
+    _offset = 0;
+    _hasMore = true;
+    final db = await DatabaseHelper.instance.database;
+    final service = TransactionsLs(db);
+    final batch = await service.getTransactions(limit: _pageSize, offset: 0);
+    _offset = batch.length;
+    if (batch.length < _pageSize) _hasMore = false;
+    return batch;
+  }
+
+  bool get hasMore => _hasMore;
+
+  Future<void> loadMore() async {
+    if (!_hasMore) return;
+    final current = state.value ?? [];
+    final db = await DatabaseHelper.instance.database;
+    final service = TransactionsLs(db);
+    final batch = await service.getTransactions(limit: _pageSize, offset: _offset);
+    _offset += batch.length;
+    if (batch.length < _pageSize) _hasMore = false;
+    state = AsyncData([...current, ...batch]);
+  }
+}
+
+final txProv = AsyncNotifierProvider<TransactionsNotifier, List<Transaction>>(
+  () => TransactionsNotifier(),
+);
 
 class TransactionsPage extends ConsumerWidget {
   const TransactionsPage({super.key});

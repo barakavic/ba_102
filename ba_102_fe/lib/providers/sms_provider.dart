@@ -196,7 +196,8 @@ class SmsNotifier extends StateNotifier<SmsState> {
   
   Future<int> syncHistoricalMessages({DateTime? since}) async {
     try {
-      final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: since);
+      final syncSince = since ?? DateTime(DateTime.now().year, 1, 1);
+      final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: syncSince);
       
       if (oldMessages.isEmpty) return 0;
 

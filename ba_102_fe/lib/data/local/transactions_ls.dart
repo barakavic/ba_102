@@ -37,15 +37,15 @@ class TransactionsLs {
  }
 
 
-  Future<List<Transaction>> getTransactions()async{
+  Future<List<Transaction>> getTransactions({int limit = 50, int offset = 0}) async {
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
       orderBy: 'date DESC',
-      );
+      limit: limit,
+      offset: offset,
+    );
 
-    return List.generate(maps.length, (i){
-      return Transaction.fromMap((maps[i]));
-    });
+    return List.generate(maps.length, (i) => Transaction.fromMap(maps[i]));
   }
 
   Future<List<Transaction>> getTransactionsByCategory(int categoryId) async{

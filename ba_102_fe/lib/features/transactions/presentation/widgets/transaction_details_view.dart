@@ -20,10 +20,29 @@ class TransactionDetailsView extends ConsumerStatefulWidget {
 }
 
 class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView> {
-  int? _selectedCategoryId; // null for 'All'
-  String _selectedType = 'All'; // All, In, Out
-  String _sortBy = 'Newest'; // Newest, Oldest, Highest, Lowest
+  int? _selectedCategoryId;
+  String _selectedType = 'All';
+  String _sortBy = 'Newest';
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 300) {
+      ref.read(txProv.notifier).loadMore();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +189,7 @@ class _TransactionDetailsViewState extends ConsumerState<TransactionDetailsView>
                 final grouped = _groupTransactions(filtered);
 
                 return ListView.builder(
+                  controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   itemCount: grouped.length,

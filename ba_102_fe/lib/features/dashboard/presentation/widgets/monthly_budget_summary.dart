@@ -16,7 +16,6 @@ class MonthlyBudgetSummary extends ConsumerWidget {
         final spent = data['spent'] ?? 0.0;
         final income = data['income'] ?? 0.0;
         
-        // Avoid division by zero
         final progress = income > 0 ? (spent / income).clamp(0.0, 1.0) : 0.0;
         final percentage = (progress * 100).toInt();
 
