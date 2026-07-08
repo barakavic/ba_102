@@ -111,14 +111,6 @@ class SmsNotifier extends StateNotifier<SmsState> {
     }
   }
 
-  // Public method for testing/simulation
-  void simulateSms(String body, String sender) {
-    _handleIncomingSms({
-      'body': body,
-      'sender': sender,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    }, isSimulated: true);
-  }
 
   String _generateDescription(MpesaTransaction tx, {bool isSimulated = false}){
     String desc = "";
@@ -204,10 +196,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
   
   Future<int> syncHistoricalMessages({DateTime? since}) async {
     try {
-      // Default to last 30 days if no date provided
-      final syncSince = since ?? DateTime.now().subtract(const Duration(days: 30));
-      
-      final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: syncSince);
+      final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: since);
       
       if (oldMessages.isEmpty) return 0;
 
@@ -222,7 +211,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
         var chunk = oldMessages.sublist(i, end);
 
         for (var sms in chunk){
-          final mpesaTx = _mpesaParser.parseMessage(sms['body'], sms['timestampMillis']);
+          final mpesaTx = _mpesaParser.parseMessage(sms['body'], sms['timestamp'] as int);
           
           if (mpesaTx != null){
             final existing = await db.query(
