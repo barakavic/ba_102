@@ -6,11 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
+import 'package:ba_102_fe/features/shopping/presentation/shopping_lists_page.dart';
 
-// import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
+
 import 'package:ba_102_fe/services/contact_service.dart';
-
-// Removed hardcoded Theme.of(context).colorScheme.primary to support dynamic themes
 
 final navIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -22,7 +21,7 @@ class MainNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
-    final titles = ['Total Budget', 'Transactions'/*, 'Goals'*/];
+    final titles = ['Total Budget', 'Transactions', 'Shopping Lists'];
     
     // Initialize contacts mapping when the app starts
     ref.watch(contactServiceProvider);
@@ -30,7 +29,7 @@ class MainNavigation extends ConsumerWidget {
     final pages = [
       DashboardPage(),
       TransactionsPage(),
-      // GoalsPage()
+      const ShoppingListsPage(),
     ];
 
     final smsState = ref.watch(smsProvider);
@@ -168,19 +167,17 @@ class MainNavigation extends ConsumerWidget {
               icon: Icon(
                 currentIndex == 1 ? Icons.swap_horiz : Icons.swap_horiz_outlined,
                 color: currentIndex == 1 ? Theme.of(context).colorScheme.primary : Colors.grey,
-                size: 32, // Make the center action slightly larger
+                size: 32, 
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 1,
             ),
-            /*
             IconButton(
               icon: Icon(
-                currentIndex == 2 ? Icons.track_changes : Icons.track_changes_outlined,
+                currentIndex == 2 ? Icons.shopping_bag : Icons.shopping_bag_outlined,
                 color: currentIndex == 2 ? Theme.of(context).colorScheme.primary : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 2,
             ),
-            */
           ],
         ),
       ),
