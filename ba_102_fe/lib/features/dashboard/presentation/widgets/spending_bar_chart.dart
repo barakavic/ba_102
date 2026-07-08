@@ -13,16 +13,18 @@ class SpendingBarChart extends ConsumerWidget {
     final dataAsync = ref.watch(spendingBarDataProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
     const primaryColor = Color(0xFF4B0082);
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.08),
+            color: onSurface.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -31,12 +33,12 @@ class SpendingBarChart extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Spending Analytics',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -70,10 +72,10 @@ class SpendingBarChart extends ConsumerWidget {
             child: dataAsync.when(
               data: (data) {
                 if (data.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No spending data yet',
-                      style: TextStyle(color: Colors.black54),
+                      style: TextStyle(color: onSurface.withValues(alpha: 0.5)),
                     ),
                   );
                 }
@@ -96,7 +98,7 @@ class SpendingBarChart extends ConsumerWidget {
                       drawVerticalLine: false,
                       horizontalInterval: maxY / 4,
                       getDrawingHorizontalLine: (value) => FlLine(
-                        color: Colors.grey.withValues(alpha: 0.12),
+                        color: onSurface.withValues(alpha: 0.08),
                         strokeWidth: 1,
                       ),
                     ),
@@ -114,13 +116,11 @@ class SpendingBarChart extends ConsumerWidget {
                           reservedSize: 48,
                           interval: maxY / 4,
                           getTitlesWidget: (value, meta) {
-                            if (value <= 0) {
-                              return const SizedBox.shrink();
-                            }
+                            if (value <= 0) return const SizedBox.shrink();
                             return Text(
                               NumberFormat.compact().format(value),
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: onSurface.withValues(alpha: 0.6),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -141,7 +141,7 @@ class SpendingBarChart extends ConsumerWidget {
                               child: Text(
                                 data[index].label,
                                 style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                  color: onSurface.withValues(alpha: 0.7),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -188,7 +188,7 @@ class SpendingBarChart extends ConsumerWidget {
                             backDrawRodData: BackgroundBarChartRodData(
                               show: true,
                               toY: maxY,
-                              color: Colors.grey.withValues(alpha: 0.08),
+                              color: onSurface.withValues(alpha: 0.06),
                             ),
                           ),
                         ],
@@ -221,13 +221,16 @@ class _PeriodChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF4B0082) : Colors.grey.shade100,
+          color: isSelected
+              ? const Color(0xFF4B0082)
+              : onSurface.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -235,7 +238,7 @@ class _PeriodChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : Colors.black54,
+            color: isSelected ? Colors.white : onSurface.withValues(alpha: 0.7),
           ),
         ),
       ),
