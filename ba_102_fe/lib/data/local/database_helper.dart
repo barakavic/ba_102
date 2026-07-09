@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 11,
+      version: 12,
       
     
 
@@ -120,6 +120,19 @@ FOREIGN KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
 
 );
 ''');
+
+await db.execute(
+  '''
+CREATE TABLE spending_limits (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+limit_type TEXT NOT NULL,
+amount REAL NOT NULL,
+alert_percentage REAL NOT NULL,
+specific_days TEXT,
+created_at TEXT NOT NULL
+);
+'''
+);
 
     await _seedData(db);
     return db;
@@ -272,8 +285,31 @@ FOREIGN KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
       }
     catch(_) {}
     }
+
+      if (oldVersion < 12){
+      try {
+        await db.execute(
+  '''
+CREATE TABLE spending_limits (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+limit_type TEXT NOT NULL,
+amount REAL NOT NULL,
+alert_percentage REAL NOT NULL,
+specific_days TEXT,
+created_at TEXT NOT NULL
+);
+'''
+);
+ 
+      }
+    catch(_) {}
+    }
     AppLogger.i('Database upgraded from $oldVersion to $newVersion');
   }
+
+
+  
+  
 
 
  
