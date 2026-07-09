@@ -11,6 +11,9 @@ class MonthlyBudgetSummary extends ConsumerWidget {
     final summaryAsync = ref.watch(periodSummaryProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return summaryAsync.when(
       data: (data) {
         final spent = data['spent'] ?? 0.0;
@@ -38,11 +41,11 @@ class MonthlyBudgetSummary extends ConsumerWidget {
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.08),
+                color: onSurface.withValues(alpha: 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -56,10 +59,10 @@ class MonthlyBudgetSummary extends ConsumerWidget {
                 children: [
                   Text(
                     '${ref.watch(dashboardPeriodProvider)} Reality Check',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: onSurface,
                     ),
                   ),
                   Container(
@@ -84,7 +87,7 @@ class MonthlyBudgetSummary extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: Colors.grey.shade100,
+                  backgroundColor: onSurface.withValues(alpha: 0.08),
                   valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                   minHeight: 12,
                 ),
@@ -98,15 +101,15 @@ class MonthlyBudgetSummary extends ConsumerWidget {
                     children: [
                       Text(
                         'Spent',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.6)),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         isPrivacyMode ? '****' : 'KES ${NumberFormat.compact().format(spent)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Colors.black87,
+                          color: onSurface,
                         ),
                       ),
                     ],
@@ -114,22 +117,22 @@ class MonthlyBudgetSummary extends ConsumerWidget {
                   Container(
                     width: 1,
                     height: 24,
-                    color: Colors.grey.shade200,
+                    color: onSurface.withValues(alpha: 0.1),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         'Income',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.6)),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         isPrivacyMode ? '****' : 'KES ${NumberFormat.compact().format(income)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Colors.black87,
+                          color: onSurface,
                         ),
                       ),
                     ],
