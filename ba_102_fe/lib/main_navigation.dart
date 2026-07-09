@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/dashboard_page.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
-import 'package:ba_102_fe/features/shopping/presentation/shopping_lists_page.dart';
+import 'package:ba_102_fe/features/hub/features_hub_page.dart';
 
 
 import 'package:ba_102_fe/services/contact_service.dart';
@@ -21,7 +21,7 @@ class MainNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
-    final titles = ['Total Budget', 'Transactions', 'Shopping Lists'];
+    final titles = ['Total Budget', 'Transactions', 'Features Hub'];
     
     // Initialize contacts mapping when the app starts
     ref.watch(contactServiceProvider);
@@ -29,7 +29,7 @@ class MainNavigation extends ConsumerWidget {
     final pages = [
       DashboardPage(),
       TransactionsPage(),
-      const ShoppingListsPage(),
+      const FeaturesHubPage(),
     ];
 
     final smsState = ref.watch(smsProvider);
@@ -158,7 +158,7 @@ class MainNavigation extends ConsumerWidget {
           children: [
             IconButton(
               icon: Icon(
-                currentIndex == 0 ? Icons.dashboard : Icons.dashboard_outlined,
+                currentIndex == 0 ? Icons.home : Icons.home_outlined,
                 color: currentIndex == 0 ? Theme.of(context).colorScheme.primary : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 0,
@@ -173,7 +173,7 @@ class MainNavigation extends ConsumerWidget {
             ),
             IconButton(
               icon: Icon(
-                currentIndex == 2 ? Icons.shopping_bag : Icons.shopping_bag_outlined,
+                currentIndex == 2 ? Icons.grid_view : Icons.grid_view_rounded,
                 color: currentIndex == 2 ? Theme.of(context).colorScheme.primary : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 2,
