@@ -58,12 +58,8 @@ class SmsNotifier extends StateNotifier<SmsState> {
     state = state.copyWith(isListening: true);
     AppLogger.i("Sms Listener Started Successfully");
 
-    // Auto-pull messages
-    final db = await DatabaseHelper.instance.database;
-    final localService = TransactionsLs(db);
-    final lastDate = await localService.getlastTransactionDate();
-
-    syncHistoricalMessages(since: lastDate);
+    // Auto-pull messages using a rolling lookback window
+    syncHistoricalMessagesRollingWindow();
 
   }
   catch(err){
@@ -195,63 +191,164 @@ class SmsNotifier extends StateNotifier<SmsState> {
     }
   }
   
-  Future<int> syncHistoricalMessages({DateTime? since}) async {
-    try {
-      final syncSince = since ?? DateTime(DateTime.now().year, 1, 1);
-      final List<Map<String, dynamic>> oldMessages = await _smsListener.fetchHistoricalMessages(since: syncSince);
-      
-      if (oldMessages.isEmpty) return 0;
+Future<int> syncHistoricalMessagesRollingWindow() async {
+  try {
+    final now = DateTime.now();
+    final lookbackStart = now.subtract(const Duration(days: 30));
 
-      final db = await DatabaseHelper.instance.database;
-      int newCount = 0;
+    final List<Map<String, dynamic>> oldMessages =
+        await _smsListener.fetchHistoricalMessages(since: lookbackStart);
 
-      // Chunk Message Processing
-      const chunksize = 20;
-      for (int i=0; i<= oldMessages.length; i+= chunksize){
-        int end = (i+chunksize < oldMessages.length) ? i + chunksize : oldMessages.length;
+    if (oldMessages.isEmpty) return 0;
 
-        var chunk = oldMessages.sublist(i, end);
+    final parsedMessages = <MpesaTransaction>[];
 
-        for (var sms in chunk){
-          final mpesaTx = _mpesaParser.parseMessage(sms['body'], sms['timestamp'] as int);
-          
-          if (mpesaTx != null){
-            final existing = await db.query(
-              'transactions',
-              where: 'mpesa_reference = ?',
-              whereArgs: [mpesaTx.reference],
-            );
+    for (final sms in oldMessages) {
+      final body = sms['body'] as String?;
+      final timestamp = sms['timestamp'] as int?;
 
+      if (body == null || timestamp == null) {
+        continue;
+      }
 
-            if (existing.isEmpty){
-              await _saveToDatabase(mpesaTx);
-              newCount++;
-            }
+      final mpesaTx = _mpesaParser.parseMessage(body, timestamp);
+      if (mpesaTx != null) {
+        parsedMessages.add(mpesaTx);
+      }
+    }
 
-          }
+    if (parsedMessages.isEmpty) return 0;
 
+    final oneDayRefs = parsedMessages
+        .where((tx) => now.difference(tx.timestamp).inDays <= 1)
+        .map((tx) => tx.reference)
+        .toSet();
+
+    final sevenDayRefs = parsedMessages
+        .where((tx) => now.difference(tx.timestamp).inDays <= 7)
+        .map((tx) => tx.reference)
+        .toSet();
+
+    final thirtyDayRefs = parsedMessages
+        .map((tx) => tx.reference)
+        .toSet();
+
+    final isConsistent =
+        oneDayRefs.every((ref) => sevenDayRefs.contains(ref)) &&
+        sevenDayRefs.every((ref) => thirtyDayRefs.contains(ref));
+
+    if (!isConsistent) {
+      AppLogger.w(
+        'Rolling lookback window failed consistency check. Falling back to broader recovery.',
+      );
+      return await syncHistoricalMessages(
+        since: now.subtract(const Duration(days: 90)),
+      );
+    }
+
+    final db = await DatabaseHelper.instance.database;
+    final existingRows = await db.query(
+      'transactions',
+      columns: ['mpesa_reference'],
+      where: 'mpesa_reference IS NOT NULL',
+    );
+
+    final existingRefs = existingRows
+        .map((row) => row['mpesa_reference'] as String?)
+        .whereType<String>()
+        .toSet();
+
+    int newCount = 0;
+
+    for (final tx in parsedMessages) {
+      if (existingRefs.contains(tx.reference)) {
+        continue;
+      }
+
+      await _saveToDatabase(tx);
+      newCount++;
+      existingRefs.add(tx.reference);
+    }
+
+    if (newCount > 0) {
+      ref.invalidate(txProv);
+      ref.invalidate(mpesaBalanceProvider);
+      ref.invalidate(mpesaBalanceHistoryProvider);
+      ref.invalidate(periodSummaryProvider);
+      ref.invalidate(spendingBarDataProvider);
+      ref.invalidate(topCategoriesProvider);
+      ref.invalidate(recentTransactionsProvider);
+    }
+
+    return newCount;
+  } catch (e) {
+    AppLogger.e('Rolling historical sync error: $e');
+    return 0;
+  }
+}
+
+Future<int> syncHistoricalMessages({DateTime? since}) async {
+  try {
+    final syncSince = since ?? DateTime(DateTime.now().year, 1, 1);
+    final List<Map<String, dynamic>> oldMessages =
+        await _smsListener.fetchHistoricalMessages(since: syncSince);
+
+    if (oldMessages.isEmpty) return 0;
+
+    final db = await DatabaseHelper.instance.database;
+    int newCount = 0;
+
+    const chunksize = 20;
+    for (int i = 0; i < oldMessages.length; i += chunksize) {
+      final end = (i + chunksize < oldMessages.length)
+          ? i + chunksize
+          : oldMessages.length;
+
+      final chunk = oldMessages.sublist(i, end);
+
+      for (final sms in chunk) {
+        final body = sms['body'] as String?;
+        final timestamp = sms['timestamp'] as int?;
+
+        if (body == null || timestamp == null) {
+          continue;
         }
 
+        final mpesaTx = _mpesaParser.parseMessage(body, timestamp);
+
+        if (mpesaTx != null) {
+          final existing = await db.query(
+            'transactions',
+            where: 'mpesa_reference = ?',
+            whereArgs: [mpesaTx.reference],
+          );
+
+          if (existing.isEmpty) {
+            await _saveToDatabase(mpesaTx);
+            newCount++;
+          }
+        }
+      }
+
       await Future.delayed(const Duration(milliseconds: 50));
-
-      }
-
-      if (newCount > 0){
-        ref.invalidate(txProv);
-        ref.invalidate(mpesaBalanceProvider);
-        ref.invalidate(mpesaBalanceHistoryProvider);
-        ref.invalidate(periodSummaryProvider);
-        ref.invalidate(spendingBarDataProvider);
-        ref.invalidate(topCategoriesProvider);
-        ref.invalidate(recentTransactionsProvider);
-      }
-
-      return newCount;
-    } catch(e){
-      AppLogger.e('Sync Historical Messages error, $e');
-      return 0;
     }
+
+    if (newCount > 0) {
+      ref.invalidate(txProv);
+      ref.invalidate(mpesaBalanceProvider);
+      ref.invalidate(mpesaBalanceHistoryProvider);
+      ref.invalidate(periodSummaryProvider);
+      ref.invalidate(spendingBarDataProvider);
+      ref.invalidate(topCategoriesProvider);
+      ref.invalidate(recentTransactionsProvider);
+    }
+
+    return newCount;
+  } catch (e) {
+    AppLogger.e('Sync Historical Messages error: $e');
+    return 0;
   }
+}
 
   @override
   void dispose(){
