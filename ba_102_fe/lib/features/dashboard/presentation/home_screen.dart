@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/widgets/glass_hero_card.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/widgets/spending_bar_chart.dart';
-import 'package:ba_102_fe/features/dashboard/presentation/widgets/total_spending_header.dart';
-import 'package:ba_102_fe/features/dashboard/presentation/widgets/monthly_budget_summary.dart';
+import 'package:ba_102_fe/features/dashboard/presentation/widgets/spending_speedometer.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/widgets/top_categories_row.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
 
@@ -27,11 +26,9 @@ class HomeScreen extends ConsumerWidget {
         slivers: [
           const SliverToBoxAdapter(child: GlassHeroCard()),
 
-          const SliverToBoxAdapter(child: TotalSpendingHeader()),
+          const SliverToBoxAdapter(child: SpendingSpeedometer()),
 
           const SliverToBoxAdapter(child: SpendingBarChart()),
-
-          const SliverToBoxAdapter(child: MonthlyBudgetSummary()),
 
           const SliverToBoxAdapter(child: TopCategoriesRow()),
 

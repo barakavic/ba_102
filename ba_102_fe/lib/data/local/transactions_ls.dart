@@ -181,17 +181,25 @@ class TransactionsLs {
   }
   
   Future<DateTime?> getlastTransactionDate() async{
-    final List<Map<String, dynamic>> maps = await db.query(
-      'transactions',
-      columns: ['date'],
-      orderBy: 'date DESC',
-      limit: 1,
-    );
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        'transactions',
+        columns: ['date'],
+        where: 'date IS NOT NULL',
+        orderBy: 'date DESC',
+        limit: 1,
+      );
 
-    if (maps.isNotEmpty){
-      return DateTime.fromMillisecondsSinceEpoch(maps.first['date'] as int);
-
+      if (maps.isNotEmpty) {
+        final rawDate = maps.first['date'];
+        if (rawDate is String) {
+          return DateTime.parse(rawDate);
+        }
+      }
+      return null;
+    } catch (e, st) {
+      AppLogger.e('getlastTransactionDate failed', error: e, stackTrace: st);
+      return null;
     }
-    return null;
   }
 }

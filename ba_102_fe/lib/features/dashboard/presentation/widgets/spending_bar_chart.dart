@@ -3,18 +3,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:ba_102_fe/data/models/spending_limit_model.dart';
+import 'package:ba_102_fe/providers/spending_limits_provider.dart';
 
 class SpendingBarChart extends ConsumerWidget {
   const SpendingBarChart({super.key});
+
+  double? _getGraphLimit(SpendingLimit? limit, BarChartPeriod chartPeriod) {
+    if (limit == null) return null;
+    final type = limit.limitType.toLowerCase();
+    
+    if (chartPeriod == BarChartPeriod.daily) {
+      if (type == 'daily') {
+        return limit.amount;
+      }
+      return null;
+    }
+    
+    if (chartPeriod == BarChartPeriod.weekly) {
+      if (type == 'daily') {
+        final days = limit.specificDays?.length ?? 7;
+        return limit.amount * days;
+      }
+      if (type == 'weekly') {
+        return limit.amount;
+      }
+      return null;
+    }
+    
+    // yearly
+    if (type == 'daily') {
+      final days = limit.specificDays?.length ?? 7;
+      return limit.amount * days * 52;
+    }
+    if (type == 'weekly') {
+      return limit.amount * 52;
+    }
+    if (type == 'monthly') {
+      return limit.amount * 12;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final period = ref.watch(barChartPeriodProvider);
     final dataAsync = ref.watch(spendingBarDataProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
+    final activeLimit = ref.watch(spendingLimitsProvider).valueOrNull;
+    
     const primaryColor = Color(0xFF4B0082);
     final colorScheme = Theme.of(context).colorScheme;
     final onSurface = colorScheme.onSurface;
+
+    final limitVal = _getGraphLimit(activeLimit, period);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -86,7 +128,15 @@ class SpendingBarChart extends ConsumerWidget {
                       0.0,
                       (previous, value) => value > previous ? value : previous,
                     );
-                final maxY = (maxValue <= 0 ? 100 : maxValue * 1.2).toDouble();
+                
+                double maxY = (maxValue <= 0 ? 100 : maxValue * 1.2);
+                if (limitVal != null && limitVal > maxY) {
+                  maxY = limitVal * 1.15;
+                }
+
+                final warningThreshold = activeLimit != null 
+                    ? (100 - activeLimit.alertPercentage) / 100 
+                    : 0.88;
 
                 return BarChart(
                   BarChartData(
@@ -101,6 +151,28 @@ class SpendingBarChart extends ConsumerWidget {
                         color: onSurface.withValues(alpha: 0.08),
                         strokeWidth: 1,
                       ),
+                    ),
+                    extraLinesData: ExtraLinesData(
+                      horizontalLines: [
+                        if (limitVal != null)
+                          HorizontalLine(
+                            y: limitVal,
+                            color: Colors.red.withValues(alpha: 0.6),
+                            strokeWidth: 1.5,
+                            dashArray: [4, 4],
+                            label: HorizontalLineLabel(
+                              show: !isPrivacyMode,
+                              alignment: Alignment.topRight,
+                              style: TextStyle(
+                                color: Colors.red.withValues(alpha: 0.8),
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              labelResolver: (line) =>
+                                  'Limit: ${NumberFormat.compact().format(line.y)}',
+                            ),
+                          ),
+                      ],
                     ),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(
@@ -177,13 +249,24 @@ class SpendingBarChart extends ConsumerWidget {
                       ),
                     ),
                     barGroups: List.generate(data.length, (index) {
+                      final pointTotal = data[index].total;
+                      
+                      Color barColor = primaryColor;
+                      if (limitVal != null) {
+                        if (pointTotal >= limitVal) {
+                          barColor = Colors.red;
+                        } else if (pointTotal >= limitVal * warningThreshold) {
+                          barColor = Colors.amber;
+                        }
+                      }
+
                       return BarChartGroupData(
                         x: index,
                         barRods: [
                           BarChartRodData(
-                            toY: data[index].total,
+                            toY: pointTotal,
                             width: 16,
-                            color: primaryColor,
+                            color: barColor,
                             borderRadius: BorderRadius.circular(6),
                             backDrawRodData: BackgroundBarChartRodData(
                               show: true,

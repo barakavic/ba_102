@@ -53,7 +53,7 @@ final barChartPeriodProvider = StateProvider<BarChartPeriod>(
 final periodSummaryProvider = FutureProvider<Map<String, double>>((ref) async {
   final db = await DatabaseHelper.instance.database;
   final transactionsLs = TransactionsLs(db);
-  final allTransactions = await transactionsLs.getTransactions();
+  final allTransactions = await transactionsLs.getTransactions(limit: 100000);
   final period = ref.watch(dashboardPeriodProvider);
 
   final now = DateTime.now();
