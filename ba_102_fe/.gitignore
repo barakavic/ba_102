@@ -47,3 +47,5 @@ app.*.map.json
 
 Documentation/*
 !Documentation/versions.md
+
+.continue/
