@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 12,
+      version: 13,
       
     
 
@@ -274,7 +274,7 @@ name TEXT NOT NULL,
 category TEXT,
 estimated_price REAL DEFAULT 0.0,
 quantity INTEGER DEFAULT 1,
-is_requried INTEGER DEFAULT 0,
+is_required INTEGER DEFAULT 0,
 is_bought INTEGER DEFAULT 0,
 is_permanent INTEGER DEFAULT 1,
 FOREIGN KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
@@ -294,7 +294,7 @@ CREATE TABLE spending_limits (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 limit_type TEXT NOT NULL,
 amount REAL NOT NULL,
-alert_percentage REAL NOT NULL,
+alert_percentage INTEGER NOT NULL,
 specific_days TEXT,
 created_at TEXT NOT NULL
 );
@@ -304,7 +304,35 @@ created_at TEXT NOT NULL
       }
     catch(_) {}
     }
+    if (oldVersion < 13) {
+      await _repairShoppingItemsRequiredColumn(db);
+    }
     AppLogger.i('Database upgraded from $oldVersion to $newVersion');
+  }
+
+  Future<void> _repairShoppingItemsRequiredColumn(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = ? AND name = ?",
+      ['table', 'shopping_items'],
+    );
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery('PRAGMA table_info(shopping_items)');
+    final columnNames =
+        columns.map((column) => column['name'] as String).toSet();
+
+    if (!columnNames.contains('is_required')) {
+      await db.execute(
+        'ALTER TABLE shopping_items ADD COLUMN is_required INTEGER DEFAULT 0',
+      );
+    }
+
+    if (columnNames.contains('is_requried')) {
+      await db.execute(
+        'UPDATE shopping_items SET is_required = is_requried '
+        'WHERE is_requried IS NOT NULL',
+      );
+    }
   }
 
 
@@ -318,7 +346,5 @@ Future <void> close() async {
   db.close();
 }
   }
-
-
 
 
