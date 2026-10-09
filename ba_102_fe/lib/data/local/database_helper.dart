@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 13,
+      version: 14,
 
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON;');
@@ -95,6 +95,7 @@ CREATE TABLE shopping_lists (
 id TEXT PRIMARY KEY,
 title TEXT,
 color_swatch INTEGER,
+budget_limit REAL DEFAULT 0.0,
 is_temporary INTEGER DEFAULT 0,
 createdAt INTEGER
 );
@@ -325,6 +326,13 @@ created_at TEXT NOT NULL
     }
     if (oldVersion < 13) {
       await _repairShoppingItemsRequiredColumn(db);
+    }
+    if (oldVersion < 14) {
+      try {
+        await db.execute(
+          'ALTER TABLE shopping_lists ADD COLUMN budget_limit REAL DEFAULT 0.0',
+        );
+      } catch (_) {}
     }
     AppLogger.i('Database upgraded from $oldVersion to $newVersion');
   }

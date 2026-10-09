@@ -2,6 +2,7 @@ class ShoppingListModel {
   final String? id;
   final String? title;
   final int? colorSwatch;
+  final double? budgetLimit;
   final bool isTemporary;
   final DateTime? createdAt;
 
@@ -9,46 +10,52 @@ class ShoppingListModel {
     this.id,
     this.title,
     this.colorSwatch,
+    this.budgetLimit,
     this.isTemporary = false,
-    this.createdAt
+    this.createdAt,
+  });
 
-  }
-  );
-
-  Map<String, dynamic> toMap(){
-    return{
+  Map<String, dynamic> toMap() {
+    return {
       "id": id,
       "title": title,
       "color_swatch": colorSwatch,
-      "is_temporary": isTemporary ? 1 :0,
-      "createdAt": createdAt!.millisecondsSinceEpoch,
-
+      "budget_limit": budgetLimit,
+      "is_temporary": isTemporary ? 1 : 0,
+      "createdAt": createdAt?.millisecondsSinceEpoch,
     };
   }
 
-  factory ShoppingListModel.fromMap(Map<String, dynamic> map){
+  factory ShoppingListModel.fromMap(Map<String, dynamic> map) {
     return ShoppingListModel(
       id: map['id'],
       title: map['title'],
       colorSwatch: map['color_swatch'],
+      budgetLimit: map['budget_limit'] != null
+          ? (map['budget_limit'] as num).toDouble()
+          : null,
       isTemporary: map['is_temporary'] == 1,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
-      );
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+          : null,
+    );
   }
 
   ShoppingListModel copyWith({
     String? id,
     String? title,
     int? colorSwatch,
+    double? budgetLimit,
     bool? isTemporary,
     DateTime? createdAt,
-  }){
+  }) {
     return ShoppingListModel(
       id: id ?? this.id,
-      title: title  ?? this.title,
+      title: title ?? this.title,
       colorSwatch: colorSwatch ?? this.colorSwatch,
+      budgetLimit: budgetLimit ?? this.budgetLimit,
       isTemporary: isTemporary ?? this.isTemporary,
-      createdAt: createdAt ?? this.createdAt
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
