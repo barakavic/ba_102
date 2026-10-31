@@ -34,6 +34,15 @@ class ShoppingListItemProvider extends FamilyAsyncNotifier<List<ShoppingListItem
 
     ref.invalidateSelf();
   }
+
+  Future<void> saveItemsForList(
+    String listId,
+    List<ShoppingListItemModel> items,
+  ) async {
+    final service = await ref.read(shoppingLsProvider.future);
+    await service.saveItemsForList(listId, items);
+    ref.invalidateSelf();
+  }
 } 
 
 final shoppingListItemsProvider = AsyncNotifierProvider.family<ShoppingListItemProvider, List<ShoppingListItemModel>, String>(

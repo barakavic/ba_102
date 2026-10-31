@@ -35,7 +35,7 @@ class CategoryItemDraft {
 
   String get name => nameController.text.trim();
 
-  // Stopcheck: Quantity minimum of 1
+  
   double get quantity {
     final parsed = double.tryParse(quantityController.text.trim());
     if (parsed == null || parsed < 1) return 1.0;
@@ -74,7 +74,7 @@ class CategoryDraft {
   String get name => nameController.text.trim();
   double get total => items.fold(0.0, (sum, item) => sum + item.total);
 
-  // Detects duplicate item names within this category (case-insensitive)
+  
   Set<String> get duplicateItemIds {
     final counts = <String, int>{};
     for (final item in items) {
@@ -200,7 +200,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
     final selectedCount =
         category.items.where((item) => item.isSelected).length;
 
-    // A collapsed category displays at most 4 items
+    
     final displayedItems = category.isCollapsed && category.items.length > 4
         ? category.items.take(4).toList()
         : category.items;
@@ -221,7 +221,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Category name with dashed-circle ?, total, collapse/expand toggle, and options
+          
           Row(
             children: [
               Expanded(
@@ -274,7 +274,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Dashed circle question mark immediately after suggested name; disappears after edit
+                    
                     if (category.isSuggested) ...[
                       const SizedBox(width: 5),
                       DashedCircleQuestionMark(color: color),
@@ -295,7 +295,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // Batch delete icon if items are multi-selected in edit mode
+              
               if (isEditMode && selectedCount > 0 && onDeleteSelectedItems != null)
                 IconButton(
                   icon: Icon(
@@ -309,7 +309,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
                   onPressed: onDeleteSelectedItems,
                 ),
 
-              // Section Total formatted
+              
               Text(
                 'KES ${currencyFormatter.format(category.total)}',
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -319,7 +319,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
               ),
               const SizedBox(width: 4),
 
-              // Collapse / Expand Category Button
+             
               IconButton(
                 icon: Icon(
                   category.isCollapsed
@@ -352,7 +352,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Items Table - Fits cleanly in view with no horizontal overflow
+          
           if (category.items.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -368,7 +368,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
           else ...[
             Column(
               children: [
-                // Table Column Headers
+                
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
@@ -404,7 +404,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
                   ),
                 ),
                 const Divider(height: 1),
-                // Render at most 4 items when collapsed; all items when expanded
+                
                 ...displayedItems.map(
                   (item) => _CategoryItemRow(
                     key: ValueKey(item.id),
@@ -419,7 +419,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
               ],
             ),
 
-            // If collapsed and has more than 4 items, show an expand prompt
+            
             if (category.isCollapsed && category.items.length > 4)
               InkWell(
                 onTap: onToggleCollapse,
@@ -450,7 +450,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // Bottom-right: Per-category addition FAB
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -493,11 +493,11 @@ class _CategoryItemRow extends StatelessWidget {
     final theme = Theme.of(context);
     final currencyFormatter = NumberFormat('#,###');
 
-    // In edit mode: checkbox controls multi-selection (isSelected)
-    // In view mode: checkbox controls bought status (isBought with strikethrough)
+    
+    
     final isChecked = isEditMode ? item.isSelected : item.isBought;
 
-    // Strikethrough is active ONLY in view mode
+    
     final textDecoration =
         (!isEditMode && item.isBought) ? TextDecoration.lineThrough : null;
     final textColor = (!isEditMode && item.isBought)
@@ -509,7 +509,7 @@ class _CategoryItemRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Circular Checkbox leading
+          
           SizedBox(
             width: 34,
             child: Transform.scale(
@@ -523,7 +523,7 @@ class _CategoryItemRow extends StatelessWidget {
             ),
           ),
 
-          // Column 1: Item Name (Flex 3) with ellipsis and duplicate warning
+         
           Expanded(
             flex: 3,
             child: isEditMode
@@ -574,7 +574,7 @@ class _CategoryItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
 
-          // Column 2: Quantity with Minimum 1 stopcheck
+          
           SizedBox(
             width: 40,
             child: isEditMode
@@ -586,7 +586,7 @@ class _CategoryItemRow extends StatelessWidget {
                     onChanged: (val) {
                       final parsed = double.tryParse(val.trim());
                       if (parsed != null && parsed < 1) {
-                        // Stopcheck: prevent going to 0 or negative
+                        
                         item.quantityController.text = '1';
                         item.quantityController.selection =
                             TextSelection.fromPosition(
@@ -620,7 +620,7 @@ class _CategoryItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
 
-          // Column 3: Unit Price (Flex 2)
+          
           Expanded(
             flex: 2,
             child: isEditMode
@@ -657,7 +657,7 @@ class _CategoryItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
 
-          // Column 4: Calculated Total (Read-only, Flex 2)
+          
           Expanded(
             flex: 2,
             child: Text(
@@ -674,7 +674,7 @@ class _CategoryItemRow extends StatelessWidget {
             ),
           ),
 
-          // Trailing More IconButton (inert for now)
+          
           SizedBox(
             width: 32,
             child: IconButton(
@@ -684,7 +684,7 @@ class _CategoryItemRow extends StatelessWidget {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               onPressed: () {
-                // Inert for now
+              
               },
             ),
           ),

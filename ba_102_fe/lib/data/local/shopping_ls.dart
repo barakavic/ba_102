@@ -155,5 +155,30 @@ catch(e, st){
     }
 
   }
+
+  Future<void> saveItemsForList(
+    String listId,
+    List<ShoppingListItemModel> items,
+  ) async {
+    try {
+      await db.transaction((txn) async {
+        await txn.delete(
+          'shopping_items',
+          where: 'list_id = ?',
+          whereArgs: [listId],
+        );
+        for (final item in items) {
+          await txn.insert(
+            'shopping_items',
+            item.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+    } catch (e, st) {
+      AppLogger.e('Failed to save items for list', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
 }
 
