@@ -74,6 +74,12 @@ class _ShoppingListDetailsPageState
     if (_hasInitializedFromDb) return;
     _hasInitializedFromDb = true;
 
+    // Dispose and clear any stale categories (e.g. from a previous load / pull-to-refresh)
+    for (final cat in _categories) {
+      cat.dispose();
+    }
+    _categories.clear();
+
     if (dbItems.isEmpty) return;
 
     final Map<String, List<ShoppingListItemModel>> grouped = {};
@@ -205,30 +211,100 @@ class _ShoppingListDetailsPageState
     });
   }
 
-  void _saveChanges() {
-    setState(() {
-      _hasUnsavedChanges = false;
-      _isEditMode = false; // Closed edit mode -> enters View Mode
-      // Clear any remaining multi-selections
-      for (final cat in _categories) {
-        for (final item in cat.items) {
-          item.isSelected = false;
-        }
-      }
+  Future<void> _saveChanges() async {
+    final listId = widget.list.id;
+    if (listId == null) return;
+
+    // 1. Discard empty item rows
+    for (final category in _categories) {
+      category.items.removeWhere((item) {
+        final isBlank = item.name.isEmpty && item.price == 0;
+        if (isBlank) item.dispose();
+        return isBlank;
+      });
+    }
+
+    // 2. Discard empty categories (no name AND no items)
+    _categories.removeWhere((cat) {
+      final isEmpty = cat.items.isEmpty && cat.name.isEmpty;
+      if (isEmpty) cat.dispose();
+      return isEmpty;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Changes Saved Successfully'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    // 3. Build model list from drafts
+    final allItems = <ShoppingListItemModel>[];
+    for (final category in _categories) {
+      for (final item in category.items) {
+        allItems.add(
+          ShoppingListItemModel(
+            id: item.id,
+            listId: listId,
+            name: item.name,
+            category: category.name.isNotEmpty ? category.name : null,
+            estimatedPrice: item.price,
+            quantity: item.quantity.toInt(),
+            isBought: item.isBought,
+          ),
+        );
+      }
+    }
+
+    // 4. Clear multi-selections optimistically
+    setState(() {
+      for (final cat in _categories) {
+        for (final i in cat.items) {
+          i.isSelected = false;
+        }
+      }
+      _hasUnsavedChanges = false;
+      _isEditMode = false;
+    });
+
+    // 5. Persist to DB
+    try {
+      await ref
+          .read(shoppingListItemsProvider(listId).notifier)
+          .saveItemsForList(listId, allItems);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('List saved successfully'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Roll back UI flags so user can retry
+      setState(() {
+        _hasUnsavedChanges = true;
+        _isEditMode = true;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   void _toggleEditMode() {
     setState(() {
       _isEditMode = !_isEditMode;
     });
+  }
+
+  Future<void> _handleRefresh() async {
+    final listId = widget.list.id;
+    if (listId != null) {
+      _hasInitializedFromDb = false;
+      ref.invalidate(shoppingListItemsProvider(listId));
+      await ref.read(shoppingListItemsProvider(listId).future);
+    }
   }
 
   @override
@@ -297,78 +373,90 @@ class _ShoppingListDetailsPageState
                 onAddCategory: _addCategory,
               ),
 
-              // 2. Category Containers
+              // 2. Category Containers with Pull to Refresh
               Expanded(
-                child: visibleCategories.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.shopping_bag_outlined,
-                                color: _listColor.withValues(alpha: 0.6),
-                                size: 56,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _categories.isEmpty
-                                    ? 'No categories yet'
-                                    : 'No matching categories found',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _categories.isEmpty
-                                    ? 'Tap the + button above to add your first category (Food, Toiletries, etc.)'
-                                    : 'Try a different search term.',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.6),
+                child: RefreshIndicator(
+                  color: _listColor,
+                  onRefresh: _handleRefresh,
+                  child: visibleCategories.isEmpty
+                      ? SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.55,
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.shopping_bag_outlined,
+                                      color: _listColor.withValues(alpha: 0.6),
+                                      size: 56,
                                     ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      _categories.isEmpty
+                                          ? 'No categories yet'
+                                          : 'No matching categories found',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w700),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _categories.isEmpty
+                                          ? 'Tap the + button above to add your first category (Food, Toiletries, etc.)'
+                                          : 'Try a different search term.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
+                            ),
                           ),
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 88),
+                          itemCount: visibleCategories.length,
+                          itemBuilder: (context, index) {
+                            final category = visibleCategories[index];
+                            return ShoppingListDetailCategory(
+                              key: ValueKey(category.id),
+                              category: category,
+                              isEditMode: _isEditMode,
+                              hasDuplicateCategoryName: duplicateCategoryNames
+                                  .contains(category.name.toLowerCase()),
+                              onAddItem: () => _addItemToCategory(category),
+                              onToggleItem: _toggleItem,
+                              onToggleCollapse: () {
+                                setState(() {
+                                  category.isCollapsed = !category.isCollapsed;
+                                });
+                              },
+                              onDeleteSelectedItems: () =>
+                                  _deleteSelectedItems(category),
+                              onItemChanged: () {
+                                setState(() {
+                                  _hasUnsavedChanges = true;
+                                });
+                              },
+                            );
+                          },
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 32),
-                        itemCount: visibleCategories.length,
-                        itemBuilder: (context, index) {
-                          final category = visibleCategories[index];
-                          return ShoppingListDetailCategory(
-                            key: ValueKey(category.id),
-                            category: category,
-                            isEditMode: _isEditMode,
-                            hasDuplicateCategoryName: duplicateCategoryNames
-                                .contains(category.name.toLowerCase()),
-                            onAddItem: () => _addItemToCategory(category),
-                            onToggleItem: _toggleItem,
-                            onToggleCollapse: () {
-                              setState(() {
-                                category.isCollapsed = !category.isCollapsed;
-                              });
-                            },
-                            onDeleteSelectedItems: () =>
-                                _deleteSelectedItems(category),
-                            onItemChanged: () {
-                              setState(() {
-                                _hasUnsavedChanges = true;
-                              });
-                            },
-                          );
-                        },
-                      ),
+                ),
               ),
             ],
           );
@@ -376,6 +464,16 @@ class _ShoppingListDetailsPageState
         error: (err, st) => Center(child: Text('Error: $err')),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
+      floatingActionButton: _hasUnsavedChanges
+          ? FloatingActionButton.extended(
+              heroTag: 'save-shopping-list-fab',
+              onPressed: _saveChanges,
+              icon: const Icon(Icons.check),
+              label: const Text('Save'),
+              backgroundColor: _listColor,
+              foregroundColor: Colors.white,
+            )
+          : null,
     );
   }
 }
