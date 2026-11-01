@@ -3,8 +3,12 @@ import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_d
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detail_total.dart';
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detaiil_category.dart';
 import 'package:ba_102_fe/providers/shopping_list_item_provider.dart';
+import 'package:ba_102_fe/providers/shopping_list_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class ShoppingListDetailsPage extends ConsumerStatefulWidget {
   final ShoppingListModel list;
@@ -190,12 +194,37 @@ class _ShoppingListDetailsPageState
       if (_isEditMode) {
         // In Edit Mode: multi-selection
         item.isSelected = !item.isSelected;
+        _hasUnsavedChanges = true;
       } else {
         // In View Mode: bought tracking with strikethrough
         item.isBought = !item.isBought;
       }
-      _hasUnsavedChanges = true;
     });
+
+    if (!_isEditMode) {
+      _persistItemBoughtStatus(item);
+    }
+  }
+
+  Future<void> _persistItemBoughtStatus(CategoryItemDraft item) async {
+    final listId = widget.list.id;
+    if (listId == null) return;
+    try {
+      final service = await ref.read(shoppingLsProvider.future);
+      await service.updateListItem(
+        ShoppingListItemModel(
+          id: item.id,
+          listId: listId,
+          name: item.name,
+          estimatedPrice: item.price,
+          quantity: item.quantity.toInt(),
+          isBought: item.isBought,
+          brand: item.brand,
+          expiryDate: item.expiryDate,
+          volume: item.volume,
+        ),
+      );
+    } catch (_) {}
   }
 
   void _deleteSelectedItems(CategoryDraft category) {
@@ -341,6 +370,7 @@ class _ShoppingListDetailsPageState
         onSearchChanged: _onSearchChanged,
         onSave: _saveChanges,
         onToggleEdit: _toggleEditMode,
+        onMore: _showListOptionsMenu,
       ),
       body: itemsAsync.when(
         data: (dbItems) {
@@ -380,11 +410,12 @@ class _ShoppingListDetailsPageState
 
           return Column(
             children: [
-              // 1. Pinned Total Header with Category (+) FAB
+              // 1. Pinned Total Header with Category (+) FAB (hidden in view mode)
               ShoppingListDetailTotal(
                 total: currentTotal,
                 budgetLimit: widget.list.budgetLimit,
                 accentColor: _listColor,
+                isEditMode: _isEditMode,
                 onAddCategory: _addCategory,
               ),
 
@@ -482,7 +513,7 @@ class _ShoppingListDetailsPageState
         error: (err, st) => Center(child: Text('Error: $err')),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
-      floatingActionButton: _hasUnsavedChanges
+      floatingActionButton: (_isEditMode && _hasUnsavedChanges)
           ? FloatingActionButton.extended(
               heroTag: 'save-shopping-list-fab',
               onPressed: _saveChanges,
@@ -492,6 +523,376 @@ class _ShoppingListDetailsPageState
               foregroundColor: Colors.white,
             )
           : null,
+    );
+  }
+
+  void _shareTemplate() async {
+    final buffer = StringBuffer();
+    buffer.writeln('🛒 ${widget.list.title ?? "Shopping List"}');
+
+    final currentTotal = _categories.fold<double>(
+      0.0,
+      (sum, category) => sum + category.total,
+    );
+    final formatter = NumberFormat('#,###');
+    buffer.writeln('Total: KES ${formatter.format(currentTotal)}\n');
+
+    for (final category in _categories) {
+      final catName =
+          category.name.trim().isEmpty ? 'General' : category.name.trim();
+      buffer.writeln('📁 $catName');
+      for (final item in category.items) {
+        final itemName =
+            item.name.trim().isEmpty ? 'Untitled Item' : item.name.trim();
+        final qtyStr = item.quantity == item.quantity.toInt()
+            ? item.quantity.toInt().toString()
+            : item.quantity.toString();
+
+        final details = <String>[];
+        if (item.brand != null && item.brand!.isNotEmpty) details.add(item.brand!);
+        if (item.volume != null && item.volume!.isNotEmpty) details.add(item.volume!);
+        final detailStr = details.isNotEmpty ? ' (${details.join(", ")})' : '';
+
+        final priceStr =
+            item.total > 0 ? ' - KES ${formatter.format(item.total)}' : '';
+        buffer.writeln('  • $itemName x$qtyStr$detailStr$priceStr');
+      }
+      buffer.writeln();
+    }
+
+    final text = buffer.toString().trim();
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Shopping list template copied to clipboard!'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _showDuplicateDialog() {
+    final titleController = TextEditingController(
+      text: 'Copy of ${widget.list.title ?? "Shopping List"}',
+    );
+    Color selectedColor = _listColor;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Duplicate Template',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Create a fresh copy of this shopping list with all categories and items reset to unbought.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleController,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'New list title',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Color swatch',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _categoryColorPalette.map((color) {
+                      final isSelected = color.value == selectedColor.value;
+                      return GestureDetector(
+                        onTap: () => setDialogState(() => selectedColor = color),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? Colors.black : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: selectedColor),
+                  onPressed: () async {
+                    final newTitle = titleController.text.trim();
+                    if (newTitle.isEmpty) return;
+                    Navigator.pop(ctx);
+                    await _executeDuplicateList(newTitle, selectedColor);
+                  },
+                  child: const Text('Duplicate'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _executeDuplicateList(String newTitle, Color color) async {
+    try {
+      final newListId = const Uuid().v4();
+      final newList = ShoppingListModel(
+        id: newListId,
+        title: newTitle,
+        colorSwatch: color.value,
+        budgetLimit: widget.list.budgetLimit,
+        isTemporary: widget.list.isTemporary,
+        createdAt: DateTime.now(),
+      );
+
+      // 1. Create list in DB
+      await ref.read(shoppingListsProvider.notifier).createList(newList);
+
+      // 2. Clone all items
+      final clonedItems = <ShoppingListItemModel>[];
+      for (final category in _categories) {
+        for (final item in category.items) {
+          if (item.name.trim().isEmpty && item.price == 0) continue;
+          clonedItems.add(
+            ShoppingListItemModel(
+              id: const Uuid().v4(),
+              listId: newListId,
+              name: item.name,
+              category:
+                  category.name.trim().isNotEmpty ? category.name.trim() : null,
+              estimatedPrice: item.price,
+              quantity: item.quantity.toInt(),
+              isBought: false, // Reset to unbought
+              brand: item.brand,
+              expiryDate: item.expiryDate,
+              volume: item.volume,
+            ),
+          );
+        }
+      }
+
+      // 3. Save items to DB
+      final service = await ref.read(shoppingLsProvider.future);
+      await service.saveItemsForList(newListId, clonedItems);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Created "$newTitle" with ${clonedItems.length} items'),
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ShoppingListDetailsPage(list: newList),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to duplicate list: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showListOptionsMenu() {
+    final theme = Theme.of(context);
+    final listTitle = widget.list.title ?? 'Shopping List';
+    final totalItems =
+        _categories.fold<int>(0, (sum, c) => sum + c.items.length);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Colored banner header
+              Container(
+                decoration: BoxDecoration(
+                  color: _listColor,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.list_alt_rounded,
+                          color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            listTitle,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '${_categories.length} categories • $totalItems items',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Action tiles
+              _ListActionTile(
+                icon: Icons.copy_outlined,
+                label: 'Share template',
+                sub: 'Copy formatted text template to clipboard',
+                iconColor: _listColor,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _shareTemplate();
+                },
+              ),
+              _ListActionTile(
+                icon: Icons.copy_all_outlined,
+                label: 'Copy template to new list',
+                sub: 'Create a separate copy with all items reset',
+                iconColor: _listColor,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showDuplicateDialog();
+                },
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ListActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? sub;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  const _ListActionTile({
+    required this.icon,
+    required this.label,
+    this.sub,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  if (sub != null)
+                    Text(
+                      sub!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

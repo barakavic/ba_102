@@ -5,6 +5,7 @@ class ShoppingListDetailTotal extends StatelessWidget {
   final double total;
   final double? budgetLimit;
   final Color accentColor;
+  final bool isEditMode;
   final VoidCallback onAddCategory;
 
   const ShoppingListDetailTotal({
@@ -12,6 +13,7 @@ class ShoppingListDetailTotal extends StatelessWidget {
     required this.total,
     this.budgetLimit,
     required this.accentColor,
+    this.isEditMode = true,
     required this.onAddCategory,
   });
 
@@ -91,14 +93,15 @@ class ShoppingListDetailTotal extends StatelessWidget {
               ],
             ),
           ),
-          FloatingActionButton.small(
-            heroTag: 'add-shopping-category',
-            onPressed: onAddCategory,
-            backgroundColor: accentColor,
-            foregroundColor: Colors.white,
-            tooltip: 'Add Category',
-            child: const Icon(Icons.add),
-          ),
+          if (isEditMode)
+            FloatingActionButton.small(
+              heroTag: 'add-shopping-category',
+              onPressed: onAddCategory,
+              backgroundColor: accentColor,
+              foregroundColor: Colors.white,
+              tooltip: 'Add Category',
+              child: const Icon(Icons.add),
+            ),
         ],
       ),
     );

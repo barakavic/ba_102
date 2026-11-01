@@ -63,14 +63,18 @@ class ShoppingListDetailAppBar extends StatelessWidget
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
       actions: [
-        // Edit Mode Toggle Button (visible in view mode to re-enter edit mode)
         if (!isEditMode && onToggleEdit != null)
           IconButton(
             onPressed: onToggleEdit,
             tooltip: 'Edit List',
             icon: const Icon(Icons.edit_outlined),
           ),
-
+        if (isEditMode && (onSave != null || onToggleEdit != null))
+          IconButton(
+            onPressed: onSave ?? onToggleEdit,
+            tooltip: 'Done Editing',
+            icon: const Icon(Icons.check),
+          ),
         IconButton(
           onPressed: onFilter ?? () {},
           icon: const Icon(Icons.filter_list_outlined),

@@ -792,22 +792,22 @@ class ShoppingListDetailCategory extends StatelessWidget {
               ),
           ],
 
-          const SizedBox(height: 10),
-
-          
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              FloatingActionButton.small(
-                heroTag: 'add-item-${category.id}',
-                backgroundColor: color,
-                foregroundColor: Colors.white,
-                tooltip: 'Add item to ${category.name}',
-                onPressed: onAddItem,
-                child: const Icon(Icons.add, size: 20),
-              ),
-            ],
-          ),
+          if (isEditMode) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'add-item-${category.id}',
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                  tooltip: 'Add item to ${category.name}',
+                  onPressed: onAddItem,
+                  child: const Icon(Icons.add, size: 20),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
