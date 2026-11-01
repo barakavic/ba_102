@@ -108,6 +108,9 @@ class _ShoppingListDetailsPageState
             quantity: item.quantity.toDouble(),
             price: item.estimatedPrice,
             isBought: item.isBought,
+            brand: item.brand,
+            expiryDate: item.expiryDate,
+            volume: item.volume,
           );
         }).toList(),
       );
@@ -288,6 +291,9 @@ class _ShoppingListDetailsPageState
             estimatedPrice: item.price,
             quantity: item.quantity.toInt(),
             isBought: item.isBought,
+            brand: item.brand,
+            expiryDate: item.expiryDate,
+            volume: item.volume,
           ),
         );
       }

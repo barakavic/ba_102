@@ -758,6 +758,12 @@ class ShoppingListDetailCategory extends StatelessWidget {
                     accentColor: color,
                     onToggle: () => onToggleItem(item),
                     onChanged: onItemChanged,
+                    onDeleteItem: () {
+                      category.items.remove(item);
+                      item.dispose();
+                      onItemChanged();
+                    },
+                    onItemMetaChanged: onItemChanged,
                   ),
                 ),
               ],
@@ -823,9 +829,6 @@ class _CategoryItemRow extends StatelessWidget {
   final VoidCallback onChanged;
   final VoidCallback? onDeleteItem;
   final VoidCallback? onItemMetaChanged;
-  final bool hasBrand;
-  final bool hasExpiry;
-  final bool hasVolume;
 
   const _CategoryItemRow({
     super.key,
@@ -837,9 +840,6 @@ class _CategoryItemRow extends StatelessWidget {
     required this.onChanged,
     this.onDeleteItem,
     this.onItemMetaChanged,
-    this.hasBrand = false,
-    this.hasExpiry = false,
-    this.hasVolume = false,
   });
 
   void _showItemOptions(BuildContext context) {
@@ -1173,7 +1173,9 @@ class _CategoryItemRow extends StatelessWidget {
         ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
         : (isDuplicate ? theme.colorScheme.error : theme.colorScheme.onSurface);
 
-    final hasExtras = hasBrand || hasExpiry || hasVolume;
+    final hasMetadata = (item.brand != null && item.brand!.isNotEmpty) ||
+        (item.volume != null && item.volume!.isNotEmpty) ||
+        item.expiryDate != null;
 
     Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1191,15 +1193,18 @@ class _CategoryItemRow extends StatelessWidget {
           ),
         ),
 
-        hasExtras
-            ? SizedBox(
-                width: 120,
-                child: _buildNameCell(isEditMode, textDecoration, textColor, theme, isDuplicate),
-              )
-            : Expanded(
-                flex: 3,
-                child: _buildNameCell(isEditMode, textDecoration, textColor, theme, isDuplicate),
-              ),
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildNameCell(isEditMode, textDecoration, textColor, theme, isDuplicate),
+              if (hasMetadata)
+                _buildMetadataRow(item, !isEditMode && item.isBought, theme),
+            ],
+          ),
+        ),
         const SizedBox(width: 6),
 
         SizedBox(
@@ -1246,67 +1251,16 @@ class _CategoryItemRow extends StatelessWidget {
         ),
         const SizedBox(width: 6),
 
-        hasExtras
-            ? SizedBox(
-                width: 80,
-                child: _buildPriceCell(isEditMode, textDecoration, textColor, currencyFormatter),
-              )
-            : Expanded(
-                flex: 2,
-                child: _buildPriceCell(isEditMode, textDecoration, textColor, currencyFormatter),
-              ),
+        Expanded(
+          flex: 2,
+          child: _buildPriceCell(isEditMode, textDecoration, textColor, currencyFormatter),
+        ),
         const SizedBox(width: 6),
 
-        hasExtras
-            ? SizedBox(
-                width: 80,
-                child: _buildTotalCell(textDecoration, textColor, currencyFormatter, theme),
-              )
-            : Expanded(
-                flex: 2,
-                child: _buildTotalCell(textDecoration, textColor, currencyFormatter, theme),
-              ),
-
-        if (hasBrand) ...[
-          const SizedBox(width: 6),
-          SizedBox(
-            width: 90,
-            child: Text(
-              item.brand ?? '—',
-              style: TextStyle(fontSize: 11, color: textColor),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-
-        if (hasExpiry) ...[
-          const SizedBox(width: 6),
-          SizedBox(
-            width: 90,
-            child: Text(
-              item.expiryDate != null
-                  ? DateFormat('dd MMM').format(item.expiryDate!)
-                  : '—',
-              style: TextStyle(fontSize: 11, color: textColor),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-
-        if (hasVolume) ...[
-          const SizedBox(width: 6),
-          SizedBox(
-            width: 70,
-            child: Text(
-              item.volume ?? '—',
-              style: TextStyle(fontSize: 11, color: textColor),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+        Expanded(
+          flex: 2,
+          child: _buildTotalCell(textDecoration, textColor, currencyFormatter, theme),
+        ),
 
         SizedBox(
           width: 32,
@@ -1325,6 +1279,98 @@ class _CategoryItemRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: row,
+    );
+  }
+
+  Widget _buildMetadataRow(CategoryItemDraft item, bool isBought, ThemeData theme) {
+    final parts = <Widget>[];
+    final baseColor = isBought
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.6);
+
+    if (item.brand != null && item.brand!.isNotEmpty) {
+      parts.add(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.label_outline, size: 11, color: baseColor),
+          const SizedBox(width: 2),
+          Text(
+            item.brand!,
+            style: TextStyle(
+              fontSize: 11,
+              color: baseColor,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ));
+    }
+
+    if (item.volume != null && item.volume!.isNotEmpty) {
+      if (parts.isNotEmpty) {
+        parts.add(Text(' • ', style: TextStyle(fontSize: 10, color: baseColor)));
+      }
+      parts.add(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.straighten_outlined, size: 11, color: baseColor),
+          const SizedBox(width: 2),
+          Text(
+            item.volume!,
+            style: TextStyle(
+              fontSize: 11,
+              color: baseColor,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ));
+    }
+
+    if (item.expiryDate != null) {
+      if (parts.isNotEmpty) {
+        parts.add(Text(' • ', style: TextStyle(fontSize: 10, color: baseColor)));
+      }
+      final now = DateTime.now();
+      final isExpired =
+          item.expiryDate!.isBefore(DateTime(now.year, now.month, now.day));
+      final isNearExpiry =
+          !isExpired && item.expiryDate!.difference(now).inDays <= 3;
+      final expColor = isExpired
+          ? theme.colorScheme.error
+          : (isNearExpiry ? Colors.orange : baseColor);
+
+      parts.add(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.event_outlined, size: 11, color: expColor),
+          const SizedBox(width: 2),
+          Text(
+            DateFormat('dd MMM').format(item.expiryDate!),
+            style: TextStyle(
+              fontSize: 11,
+              color: expColor,
+              fontWeight:
+                  (isExpired || isNearExpiry) ? FontWeight.bold : FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 2,
+        children: parts,
+      ),
     );
   }
 
