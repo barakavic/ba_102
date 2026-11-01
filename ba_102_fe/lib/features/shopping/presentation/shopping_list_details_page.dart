@@ -211,6 +211,21 @@ class _ShoppingListDetailsPageState
     });
   }
 
+  void _deleteCategory(CategoryDraft category) {
+    setState(() {
+      category.dispose();
+      _categories.remove(category);
+      _hasUnsavedChanges = true;
+    });
+  }
+
+  void _setCategoryBudget(CategoryDraft category, double budget) {
+    setState(() {
+      category.categoryBudget = budget > 0 ? budget : null;
+      _hasUnsavedChanges = true;
+    });
+  }
+
   Future<void> _saveChanges() async {
     final listId = widget.list.id;
     if (listId == null) return;
@@ -448,6 +463,9 @@ class _ShoppingListDetailsPageState
                               },
                               onDeleteSelectedItems: () =>
                                   _deleteSelectedItems(category),
+                              onDeleteCategory: () => _deleteCategory(category),
+                              onEditCategory: _toggleEditMode,
+                              onSetBudget: (v) => _setCategoryBudget(category, v),
                               onItemChanged: () {
                                 setState(() {
                                   _hasUnsavedChanges = true;

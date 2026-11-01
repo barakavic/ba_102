@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 14,
+      version: 15,
 
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON;');
@@ -113,6 +113,9 @@ quantity INTEGER DEFAULT 1,
 is_required INTEGER DEFAULT 0,
 is_bought INTEGER DEFAULT 0,
 is_permanent INTEGER DEFAULT 1,
+brand TEXT,
+expiry_date INTEGER,
+volume TEXT,
 FOREIGN KEY(list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE
 
 );
@@ -332,6 +335,13 @@ created_at TEXT NOT NULL
         await db.execute(
           'ALTER TABLE shopping_lists ADD COLUMN budget_limit REAL DEFAULT 0.0',
         );
+      } catch (_) {}
+    }
+    if (oldVersion < 15) {
+      try {
+        await db.execute('ALTER TABLE shopping_items ADD COLUMN brand TEXT');
+        await db.execute('ALTER TABLE shopping_items ADD COLUMN expiry_date INTEGER');
+        await db.execute('ALTER TABLE shopping_items ADD COLUMN volume TEXT');
       } catch (_) {}
     }
     AppLogger.i('Database upgraded from $oldVersion to $newVersion');
