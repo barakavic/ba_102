@@ -406,6 +406,94 @@ class _ShoppingListDetailsPageState
     await ref.read(shoppingListItemsProvider(listId).future);
   }
 
+  Future<void> _handleBackNavigation() async {
+    if (!_hasUnsavedChanges) {
+      Navigator.pop(context);
+      return;
+    }
+
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: Title + [X] Close Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Save Changes?',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Cancel and stay',
+                    onPressed: () => Navigator.pop(ctx, 'cancel'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Content
+              Text(
+                'You have unsaved changes in this list. Would you like to save before leaving?',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(ctx)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Actions: [ Discard ] on left, [ Save ] on rightmost
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(ctx).colorScheme.error,
+                    ),
+                    onPressed: () => Navigator.pop(ctx, 'discard'),
+                    child: const Text('Discard'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _listColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, 'save'),
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (action == 'discard') {
+      _hasUnsavedChanges = false;
+      if (mounted) Navigator.pop(context);
+    } else if (action == 'save') {
+      await _saveChanges();
+      if (!_hasUnsavedChanges && mounted) {
+        Navigator.pop(context);
+      }
+    }
+    // If action == 'cancel' or null (X pressed or barrier tap): stay on page
+  }
+
   @override
   Widget build(BuildContext context) {
     final listId = widget.list.id;
@@ -413,20 +501,27 @@ class _ShoppingListDetailsPageState
         ? const AsyncValue<List<ShoppingListItemModel>>.data([])
         : ref.watch(shoppingListItemsProvider(listId));
 
-    return Scaffold(
-      appBar: ShoppingListDetailAppBar(
-        title: widget.list.title ?? 'Shopping Budget',
-        isSearching: _isSearching,
-        searchController: _searchController,
-        searchFocusNode: _searchFocusNode,
-        hasUnsavedChanges: _hasUnsavedChanges,
-        isEditMode: _isEditMode,
-        onSearchToggle: _toggleSearch,
-        onSearchChanged: _onSearchChanged,
-        onSave: _saveChanges,
-        onToggleEdit: _toggleEditMode,
-        onMore: _showListOptionsMenu,
-      ),
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _handleBackNavigation();
+      },
+      child: Scaffold(
+        appBar: ShoppingListDetailAppBar(
+          title: widget.list.title ?? 'Shopping Budget',
+          isSearching: _isSearching,
+          searchController: _searchController,
+          searchFocusNode: _searchFocusNode,
+          hasUnsavedChanges: _hasUnsavedChanges,
+          isEditMode: _isEditMode,
+          onSearchToggle: _toggleSearch,
+          onSearchChanged: _onSearchChanged,
+          onSave: _saveChanges,
+          onToggleEdit: _toggleEditMode,
+          onMore: _showListOptionsMenu,
+          onBack: _handleBackNavigation,
+        ),
       body: itemsAsync.when(
         data: (dbItems) {
           if (!_hasInitializedFromDb) {
@@ -620,6 +715,7 @@ class _ShoppingListDetailsPageState
               foregroundColor: Colors.white,
             )
           : null,
+      ),
     );
   }
 
