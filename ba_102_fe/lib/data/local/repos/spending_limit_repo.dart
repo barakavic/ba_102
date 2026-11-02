@@ -1,6 +1,6 @@
 import 'package:ba_102_fe/data/models/spending_limit_model.dart';
 import 'package:ba_102_fe/utils/app_logger.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class SpendingLimitRepo {
   final Database db;

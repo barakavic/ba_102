@@ -7,7 +7,7 @@ import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:ba_102_fe/data/models/models.dart';
-import 'package:sqflite/sqflite.dart' as sqflite;
+import 'package:sqflite_sqlcipher/sqflite.dart' as sqflite;
 
 class CategoryDetailsPage extends StatelessWidget {
   final Category category;

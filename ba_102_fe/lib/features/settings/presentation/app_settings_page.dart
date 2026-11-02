@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/providers/theme_provider.dart';
+import 'package:ba_102_fe/data/local/database_helper.dart';
+import 'package:ba_102_fe/data/local/database_encryption_service.dart';
 
 // Provider to manage the global cloud sync setting
 final cloudSyncProvider = StateProvider<bool>((ref) => true);
+final databaseEncryptionConfirmationProvider = FutureProvider<String>(
+  (ref) => DatabaseHelper.instance.getEncryptionConfirmationCode(),
+);
 
 class AppSettingsPage extends ConsumerWidget {
   const AppSettingsPage({super.key});
@@ -13,6 +18,9 @@ class AppSettingsPage extends ConsumerWidget {
     final isSyncEnabled = ref.watch(cloudSyncProvider);
     final themeMode = ref.watch(themeProvider);
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final databaseEncryption = ref.watch(
+      databaseEncryptionConfirmationProvider,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -33,8 +41,9 @@ class AppSettingsPage extends ConsumerWidget {
             value: themeMode == ThemeMode.dark,
             activeColor: primaryColor,
             onChanged: (value) {
-              ref.read(themeProvider.notifier).state =
-                  value ? ThemeMode.dark : ThemeMode.light;
+              ref.read(themeProvider.notifier).state = value
+                  ? ThemeMode.dark
+                  : ThemeMode.light;
             },
           ),
           const Divider(),
@@ -42,7 +51,9 @@ class AppSettingsPage extends ConsumerWidget {
           SwitchListTile(
             secondary: Icon(Icons.cloud_sync_outlined, color: primaryColor),
             title: const Text('Cloud Synchronization'),
-            subtitle: const Text('Backup transactions to your PostgreSQL cloud'),
+            subtitle: const Text(
+              'Backup transactions to your PostgreSQL cloud',
+            ),
             value: isSyncEnabled,
             activeColor: primaryColor,
             onChanged: (value) {
@@ -50,7 +61,7 @@ class AppSettingsPage extends ConsumerWidget {
             },
           ),
           ListTile(
-            enabled: false, 
+            enabled: false,
             leading: const Icon(Icons.timer_outlined, color: Colors.grey),
             title: const Text('Sync Frequency'),
             subtitle: const Text('Real-time (Coming Soon)'),
@@ -71,6 +82,28 @@ class AppSettingsPage extends ConsumerWidget {
             leading: Icon(Icons.info_outline, color: primaryColor),
             title: const Text('Version'),
             subtitle: const Text('1.10.0+12 "Shopping & Budget Intelligence"'),
+          ),
+          ListTile(
+            leading: Icon(
+              databaseEncryption.hasValue
+                  ? Icons.verified_user_outlined
+                  : databaseEncryption.hasError
+                  ? Icons.error_outline
+                  : Icons.lock_outline,
+              color: databaseEncryption.hasError
+                  ? Theme.of(context).colorScheme.error
+                  : primaryColor,
+            ),
+            title: const Text('Database encryption'),
+            subtitle: databaseEncryption.when(
+              data: Text.new,
+              loading: () => const Text('Verifying encrypted database…'),
+              error: (error, _) => Text(
+                error is DatabaseEncryptionException
+                    ? error.message
+                    : 'Unable to verify database encryption.',
+              ),
+            ),
           ),
         ],
       ),

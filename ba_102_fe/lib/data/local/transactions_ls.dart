@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart' hide Transaction;
+import 'package:sqflite_sqlcipher/sqflite.dart' hide Transaction;
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/utils/app_logger.dart';
 

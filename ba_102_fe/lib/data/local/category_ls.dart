@@ -1,5 +1,5 @@
 import 'package:ba_102_fe/data/models/models.dart';
-import 'package:sqflite/sqlite_api.dart' hide Transaction;
+import 'package:sqflite_sqlcipher/sqlite_api.dart' hide Transaction;
 
 class CategoryLs {
   final Database db;

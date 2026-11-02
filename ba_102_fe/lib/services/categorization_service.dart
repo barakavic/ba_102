@@ -1,5 +1,5 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class CategorizationService {
   static final CategorizationService _instance = CategorizationService._internal();

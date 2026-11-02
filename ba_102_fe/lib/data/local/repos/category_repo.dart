@@ -1,5 +1,5 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
-import 'package:sqflite/sql.dart';
+import 'package:sqflite_sqlcipher/sql.dart';
 
 class CategoryRepo {
   final dbHelper = DatabaseHelper.instance;

@@ -3,7 +3,7 @@ import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/services/Sms_Listener_Service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sqflite/sqflite.dart' hide Transaction;
+import 'package:sqflite_sqlcipher/sqflite.dart' hide Transaction;
 
 const _selectedMonthPreferenceKey = 'transactions.selected_month';
 
