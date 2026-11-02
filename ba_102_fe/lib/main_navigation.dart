@@ -143,7 +143,7 @@ class MainNavigation extends ConsumerWidget {
                   const Spacer(),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text("v1.7.0 - Financial OS", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
+                    child: Text("v1.10.0 - Financial OS", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4))),
                   ),
                 ],
               ),

@@ -160,3 +160,36 @@
     - Integrated with Hawkeye API for real-time product analysis.
 - **Infrastructure**:
   - Added `torch` and `transformers` to Hawkeye dependencies for on-device NLI processing.
+
+
+## version 1.10.0+12
+- **Frontend**: Flutter - Version 1.10.0+12
+- **Major Features**:
+  - **Smart Shopping Lists & Multi-Category Management**:
+    - Dynamic item grouping by categories with custom color palettes and collapse/expand controls.
+    - Duplicate category name detection and real-time validation.
+    - Multi-select item bulk actions (bulk deletion and selection toggles).
+    - In-line item metadata (Brand, Metric Volume/Weight, Expiry date with smart warning tags).
+    - Template cloning: duplicate any existing list into a fresh copy with categories and items reset to unbought.
+    - Formatted list export & sharing via system share sheet.
+  - **Budget Intelligence & Culprit Identification**:
+    - Real-time overall budget limit and per-category budget limit enforcement.
+    - `BudgetCulpritHelper`: Deterministic detection of the likeliest culprit item causing overspend, with actionable recommendations.
+    - Add-button locking rules preventing further category/item additions while over budget.
+    - Visual balance cards, culprit alert banners, and hazard row indicators (⚠️).
+  - **Dynamic Filtering & Dynamic Price Slider**:
+    - Category chips filter with dedicated colors and 1-tap "All Categories" toggle.
+    - Price range slider dynamically bounded strictly between KES 0 and the highest existent item price.
+    - Active filter chip bar for 1-tap removal and AppBar active filter indicator dot.
+  - **Overview Page Search & Multi-Criteria Sorting**:
+    - Pinned search bar above list cards with real-time title search and instant clearing.
+    - Multi-criteria sort sheet: Date Created (Newest/Oldest), Name (A → Z / Z → A), and Total Cost (High → Low / Low → High).
+    - High-performance SQLite aggregation (`getListSummaries()`) computing totals, item counts, and bought counts in < 1ms.
+  - **Minimalist Metric Volume & Weight Picker**:
+    - Strictly metric dialog supporting Volume (ml, L) and Weight (g, kg).
+    - Smart auto-promotion (e.g. 1000g $\to$ 1 kg, 1500ml $\to$ 1.5 L) and dynamic unit conversions.
+  - **Data Persistence & UX Polish**:
+    - Real-time checklist persistence to SQLite via Riverpod notifiers, preserving checkoff states.
+    - Unsaved changes confirmation dialog on page exit and pull-to-refresh edit-mode protection.
+    - Enhanced list cards with checklist completion progress rings, checkmarks (✓), and formatted cost badges.
+    - High-contrast purple palette and WCAG-compliant dark theme adaptations.

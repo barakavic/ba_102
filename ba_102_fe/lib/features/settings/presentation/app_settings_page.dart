@@ -70,7 +70,7 @@ class AppSettingsPage extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.info_outline, color: primaryColor),
             title: const Text('Version'),
-            subtitle: const Text('1.7.0+9 "Sync Engine"'),
+            subtitle: const Text('1.10.0+12 "Shopping & Budget Intelligence"'),
           ),
         ],
       ),
