@@ -12,6 +12,7 @@ class ShoppingListDetailAppBar extends StatelessWidget
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onSave;
   final VoidCallback? onToggleEdit;
+  final bool hasActiveFilter;
   final VoidCallback? onFilter;
   final VoidCallback? onMore;
   final VoidCallback? onBack;
@@ -24,6 +25,7 @@ class ShoppingListDetailAppBar extends StatelessWidget
     this.searchFocusNode,
     this.hasUnsavedChanges = false,
     this.isEditMode = true,
+    this.hasActiveFilter = false,
     required this.onSearchToggle,
     this.onSearchChanged,
     this.onSave,
@@ -75,10 +77,32 @@ class ShoppingListDetailAppBar extends StatelessWidget
             tooltip: 'Done Editing',
             icon: const Icon(Icons.check),
           ),
-        IconButton(
-          onPressed: onFilter ?? () {},
-          icon: const Icon(Icons.filter_list_outlined),
-          tooltip: 'Filter',
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              onPressed: onFilter ?? () {},
+              icon: Icon(
+                hasActiveFilter
+                    ? Icons.filter_list_rounded
+                    : Icons.filter_list_outlined,
+              ),
+              tooltip: hasActiveFilter ? 'Filter (Active)' : 'Filter',
+            ),
+            if (hasActiveFilter)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
         ),
         IconButton(
           onPressed: onSearchToggle,

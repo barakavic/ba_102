@@ -187,6 +187,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
   final String? addDisabledReason;
   final BudgetCulprit? categoryCulprit;
   final String? culpritItemId;
+  final List<CategoryItemDraft>? visibleItemsOverride;
   final VoidCallback onAddItem;
   final ValueChanged<CategoryItemDraft> onToggleItem;
   final VoidCallback onItemChanged;
@@ -205,6 +206,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
     this.addDisabledReason,
     this.categoryCulprit,
     this.culpritItemId,
+    this.visibleItemsOverride,
     required this.onAddItem,
     required this.onToggleItem,
     required this.onItemChanged,
@@ -542,9 +544,10 @@ class ShoppingListDetailCategory extends StatelessWidget {
         category.categoryBudget != null && category.categoryBudget! > 0;
     final isOverBudget = hasBudget && category.total > category.categoryBudget!;
 
-    final displayedItems = category.isCollapsed && category.items.length > 4
-        ? category.items.take(4).toList()
-        : category.items;
+    final baseItems = visibleItemsOverride ?? category.items;
+    final displayedItems = category.isCollapsed && baseItems.length > 4
+        ? baseItems.take(4).toList()
+        : baseItems;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -769,12 +772,14 @@ class ShoppingListDetailCategory extends StatelessWidget {
           ],
 
           
-          if (category.items.isEmpty)
+          if (displayedItems.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: Text(
-                  'No items yet. Tap + below to add.',
+                  visibleItemsOverride != null && category.items.isNotEmpty
+                      ? 'No items match the current filter.'
+                      : 'No items yet. Tap + below to add.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
@@ -843,7 +848,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
             ),
 
             
-            if (category.isCollapsed && category.items.length > 4)
+            if (category.isCollapsed && baseItems.length > 4)
               InkWell(
                 onTap: onToggleCollapse,
                 borderRadius: BorderRadius.circular(6),
@@ -853,7 +858,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '+ ${category.items.length - 4} more items (tap to expand)',
+                        '+ ${baseItems.length - 4} more items (tap to expand)',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: color,
                           fontWeight: FontWeight.w700,

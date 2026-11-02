@@ -3,6 +3,7 @@ import 'package:ba_102_fe/features/shopping/presentation/utils/budget_culprit_he
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detail_appbar.dart';
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detail_total.dart';
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detaiil_category.dart';
+import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_filter_sheet.dart';
 import 'package:ba_102_fe/providers/shopping_list_item_provider.dart';
 import 'package:ba_102_fe/providers/shopping_list_provider.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,52 @@ class _ShoppingListDetailsPageState
   bool _hasUnsavedChanges = false;
   bool _isEditMode = true;
   bool _hasInitializedFromDb = false;
+
+  Set<String> _filteredCategoryIds = {};
+  RangeValues? _priceRangeFilter;
+
+  bool get _hasActiveFilter =>
+      _filteredCategoryIds.isNotEmpty || _priceRangeFilter != null;
+
+  double _getMaxExistentPrice() {
+    double maxP = 0.0;
+    for (final cat in _categories) {
+      for (final item in cat.items) {
+        if (item.price > maxP) {
+          maxP = item.price;
+        }
+      }
+    }
+    return maxP;
+  }
+
+  void _openFilterSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => ShoppingListFilterSheet(
+        categories: _categories,
+        initialCategoryIds: _filteredCategoryIds,
+        initialPriceRange: _priceRangeFilter,
+        maxExistentPrice: _getMaxExistentPrice(),
+        accentColor: _listColor,
+        onApply: (result) {
+          setState(() {
+            _filteredCategoryIds = result.categoryIds;
+            _priceRangeFilter = result.priceRange;
+          });
+        },
+      ),
+    );
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _filteredCategoryIds.clear();
+      _priceRangeFilter = null;
+    });
+  }
 
   Color get _listColor {
     if (widget.list.colorSwatch != null) {
@@ -515,10 +562,12 @@ class _ShoppingListDetailsPageState
           searchFocusNode: _searchFocusNode,
           hasUnsavedChanges: _hasUnsavedChanges,
           isEditMode: _isEditMode,
+          hasActiveFilter: _hasActiveFilter,
           onSearchToggle: _toggleSearch,
           onSearchChanged: _onSearchChanged,
           onSave: _saveChanges,
           onToggleEdit: _toggleEditMode,
+          onFilter: _openFilterSheet,
           onMore: _showListOptionsMenu,
           onBack: _handleBackNavigation,
         ),
@@ -560,16 +609,49 @@ class _ShoppingListDetailsPageState
               .map((e) => e.key)
               .toSet();
 
-          // Filter categories based on search query
-          final visibleCategories = _isSearching && _searchQuery.isNotEmpty
-              ? _categories.where((cat) {
+          // Filter categories and items based on search query, category filter, and price range
+          final isFiltering =
+              _hasActiveFilter || (_isSearching && _searchQuery.isNotEmpty);
+          final Map<String, List<CategoryItemDraft>> categoryVisibleItems = {};
+          final List<CategoryDraft> visibleCategories = [];
+
+          for (final cat in _categories) {
+            // Category filter
+            if (_filteredCategoryIds.isNotEmpty &&
+                !_filteredCategoryIds.contains(cat.id)) {
+              continue;
+            }
+
+            if (isFiltering) {
+              final matching = cat.items.where((item) {
+                // Price range filter
+                if (_priceRangeFilter != null) {
+                  if (item.price < _priceRangeFilter!.start ||
+                      item.price > _priceRangeFilter!.end) {
+                    return false;
+                  }
+                }
+                // Search query
+                if (_isSearching && _searchQuery.isNotEmpty) {
                   final matchesCat =
                       cat.name.toLowerCase().contains(_searchQuery);
-                  final matchesItem = cat.items.any((i) =>
-                      i.nameController.text.toLowerCase().contains(_searchQuery));
-                  return matchesCat || matchesItem;
-                }).toList()
-              : _categories;
+                  final matchesItem = item.nameController.text
+                      .toLowerCase()
+                      .contains(_searchQuery);
+                  if (!matchesCat && !matchesItem) return false;
+                }
+                return true;
+              }).toList();
+
+              if (matching.isNotEmpty ||
+                  (!_isSearching && _priceRangeFilter == null)) {
+                categoryVisibleItems[cat.id] = matching;
+                visibleCategories.add(cat);
+              }
+            } else {
+              visibleCategories.add(cat);
+            }
+          }
 
           return Column(
             children: [
@@ -583,6 +665,76 @@ class _ShoppingListDetailsPageState
                 overallCulprit: overallCulprit,
                 onAddCategory: _addCategory,
               ),
+
+              // Active Filters Bar
+              if (_hasActiveFilter) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        if (_filteredCategoryIds.isNotEmpty) ...[
+                          InputChip(
+                            label: Text(
+                              '${_filteredCategoryIds.length} categor${_filteredCategoryIds.length == 1 ? "y" : "ies"}',
+                              style: TextStyle(
+                                color: _listColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            avatar: Icon(Icons.category_outlined,
+                                size: 14, color: _listColor),
+                            onDeleted: () {
+                              setState(() {
+                                _filteredCategoryIds.clear();
+                              });
+                            },
+                            deleteIconColor: _listColor,
+                            backgroundColor:
+                                _listColor.withValues(alpha: 0.12),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (_priceRangeFilter != null) ...[
+                          InputChip(
+                            label: Text(
+                              'KES ${NumberFormat('#,###').format(_priceRangeFilter!.start.toInt())} — KES ${NumberFormat('#,###').format(_priceRangeFilter!.end.toInt())}',
+                              style: TextStyle(
+                                color: _listColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            avatar: Icon(Icons.payments_outlined,
+                                size: 14, color: _listColor),
+                            onDeleted: () {
+                              setState(() {
+                                _priceRangeFilter = null;
+                              });
+                            },
+                            deleteIconColor: _listColor,
+                            backgroundColor:
+                                _listColor.withValues(alpha: 0.12),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        ActionChip(
+                          label: const Text('Clear all'),
+                          onPressed: _clearFilters,
+                          visualDensity: VisualDensity.compact,
+                          labelStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
 
               // 2. Category Containers with Pull to Refresh
               Expanded(
@@ -612,7 +764,9 @@ class _ShoppingListDetailsPageState
                                     Text(
                                       _categories.isEmpty
                                           ? 'No categories yet'
-                                          : 'No matching categories found',
+                                          : (isFiltering
+                                              ? 'No matching items found'
+                                              : 'No matching categories found'),
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium
@@ -623,7 +777,9 @@ class _ShoppingListDetailsPageState
                                     Text(
                                       _categories.isEmpty
                                           ? 'Tap the + button above to add your first category (Food, Toiletries, etc.)'
-                                          : 'Try a different search term.',
+                                          : (isFiltering
+                                              ? 'Try broadening your price range or category filter.'
+                                              : 'Try a different search term.'),
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme
@@ -670,6 +826,8 @@ class _ShoppingListDetailsPageState
                             return ShoppingListDetailCategory(
                               key: ValueKey(category.id),
                               category: category,
+                              visibleItemsOverride:
+                                  categoryVisibleItems[category.id],
                               isEditMode: _isEditMode,
                               hasDuplicateCategoryName: duplicateCategoryNames
                                   .contains(category.name.toLowerCase()),
