@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 15,
+      version: 16,
 
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON;');
@@ -132,6 +132,13 @@ created_at TEXT NOT NULL
 );
 ''');
 
+    await db.execute('''
+CREATE TABLE app_preferences (
+  preference_key TEXT PRIMARY KEY,
+  preference_value TEXT NOT NULL
+);
+''');
+
     await _seedData(db);
     return db;
   }
@@ -159,6 +166,15 @@ created_at TEXT NOT NULL
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 16) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_preferences (
+          preference_key TEXT PRIMARY KEY,
+          preference_value TEXT NOT NULL
+        )
+      ''');
+    }
+
     if (oldVersion < 2) {
       // Version 2 additions (with fixes)
       try {
@@ -340,7 +356,9 @@ created_at TEXT NOT NULL
     if (oldVersion < 15) {
       try {
         await db.execute('ALTER TABLE shopping_items ADD COLUMN brand TEXT');
-        await db.execute('ALTER TABLE shopping_items ADD COLUMN expiry_date INTEGER');
+        await db.execute(
+          'ALTER TABLE shopping_items ADD COLUMN expiry_date INTEGER',
+        );
         await db.execute('ALTER TABLE shopping_items ADD COLUMN volume TEXT');
       } catch (_) {}
     }

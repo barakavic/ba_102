@@ -10,6 +10,7 @@ import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ba_102_fe/features/transactions/presentation/widgets/transaction_details_view.dart';
+
 class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
   static const _pageSize = 50;
   int _offset = 0;
@@ -34,7 +35,10 @@ class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
     final current = state.value ?? [];
     final db = await DatabaseHelper.instance.database;
     final service = TransactionsLs(db);
-    final batch = await service.getTransactions(limit: _pageSize, offset: _offset);
+    final batch = await service.getTransactions(
+      limit: _pageSize,
+      offset: _offset,
+    );
     _offset += batch.length;
     if (batch.length < _pageSize) _hasMore = false;
     state = AsyncData([...current, ...batch]);
@@ -52,19 +56,16 @@ class TransactionsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final txAsyncValue = ref.watch(txProv);
-
-
     // Listen for new transactions and show the snackbar
-    ref.listen<SmsState>(smsProvider, (previous, next){
-      if (next.lastTransaction != null && next.lastTransaction != previous?.lastTransaction){
+    ref.listen<SmsState>(smsProvider, (previous, next) {
+      if (next.lastTransaction != null &&
+          next.lastTransaction != previous?.lastTransaction) {
         _showTransactionSnackbar(context, next.lastTransaction!);
-
       }
     });
 
     return DefaultTabController(
-      length: 3, 
+      length: 3,
       child: Column(
         children: <Widget>[
           TabBar(
@@ -80,7 +81,7 @@ class TransactionsPage extends ConsumerWidget {
           Expanded(
             child: TabBarView(
               children: [
-                TransactionDetailsView(txAsyncValue: txAsyncValue),
+                const TransactionDetailsView(),
                 CategoriesPage(),
                 PlansPage(),
               ],
@@ -89,70 +90,78 @@ class TransactionsPage extends ConsumerWidget {
         ],
       ),
     );
-      
+
     // throw UnimplementedError();
   }
 
-  void _showTransactionSnackbar(BuildContext context, MpesaTransaction transaction){
+  void _showTransactionSnackbar(
+    BuildContext context,
+    MpesaTransaction transaction,
+  ) {
     String message;
     Color color;
     IconData icon;
 
-    switch(transaction.type){
+    switch (transaction.type) {
       case TransactionType.inbound:
-      message = 'Received KES amount ${transaction.amount.toStringAsFixed(2)}';
-      if (transaction.recipient != null ) message += 'to${transaction.recipient}';
-      color = Colors.green;
-      icon = Icons.arrow_downward;
-      break;
+        message =
+            'Received KES amount ${transaction.amount.toStringAsFixed(2)}';
+        if (transaction.recipient != null)
+          message += 'to${transaction.recipient}';
+        color = Colors.green;
+        icon = Icons.arrow_downward;
+        break;
       case TransactionType.outbound:
-      message = 'Sent KES ${transaction.amount.toStringAsFixed(2)}';
-      if (transaction.recipient != null) message += 'to ${transaction.recipient}';
-      color = Colors.red;
-      icon = Icons.arrow_upward;
-      break;
+        message = 'Sent KES ${transaction.amount.toStringAsFixed(2)}';
+        if (transaction.recipient != null)
+          message += 'to ${transaction.recipient}';
+        color = Colors.red;
+        icon = Icons.arrow_upward;
+        break;
       case TransactionType.withdrawal:
-      message = 'Withdrawn KES ${transaction.amount.toStringAsFixed(2)}';
-      color = Colors.orange.shade400;
-      icon = Icons.local_atm;
-      break;
+        message = 'Withdrawn KES ${transaction.amount.toStringAsFixed(2)}';
+        color = Colors.orange.shade400;
+        icon = Icons.local_atm;
+        break;
       case TransactionType.deposit:
-      message = 'Deposited KES ${transaction.amount.toStringAsFixed(2)}';
-      color = Colors.blue;
-      icon = Icons.account_balance;
-      break;
+        message = 'Deposited KES ${transaction.amount.toStringAsFixed(2)}';
+        color = Colors.blue;
+        icon = Icons.account_balance;
+        break;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Row(children: [
-        Icon(icon, color: Colors.white, size: 20),
-        const SizedBox(
-          width: 8,
-        ),
-        Expanded(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      SnackBar(
+        content: Row(
           children: [
-            Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text('Ref: ${transaction.reference}', style: const TextStyle(fontSize: 11),),
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Ref: ${transaction.reference}',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),),
-      ],
+        ),
+        backgroundColor: color,
+        action: SnackBarAction(
+          label: 'View',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+        duration: const Duration(seconds: 4),
       ),
-      backgroundColor: color,
-      action: SnackBarAction(
-      label: 'View', 
-      textColor: Colors.white,
-      onPressed: (){},
-      ),
-      duration: 
-       const Duration(seconds:  4),
-      ),
-      
     );
   }
-
-
-
-  }
-  
+}

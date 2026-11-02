@@ -9,48 +9,72 @@ class SmsListenerService {
 
   SmsListenerService({required this.onMessageReceived});
 
-
   // Initialize Listener
-  Future<void> initialize() async{
+  Future<void> initialize() async {
     final status = await Permission.sms.request();
 
-
-    if (status.isGranted){
+    if (status.isGranted) {
       platform.setMethodCallHandler(_handleMethodCall);
       AppLogger.i("SMS Listener initialized");
-
-    }
-    else{
+    } else {
       AppLogger.w("SMS Permission denied");
     }
   }
 
-    Future<dynamic> _handleMethodCall(MethodCall call) async{
-      if (call.method == 'onSmsReceived'){
-        final Map<String, dynamic> smsData = Map<String, dynamic>.from(call.arguments);
-        onMessageReceived(smsData);
-      }
+  Future<dynamic> _handleMethodCall(MethodCall call) async {
+    if (call.method == 'onSmsReceived') {
+      final Map<String, dynamic> smsData = Map<String, dynamic>.from(
+        call.arguments,
+      );
+      onMessageReceived(smsData);
     }
-
-
-
-
-    Future<List<Map<String, dynamic>>> fetchHistoricalMessages({DateTime? since}) async {
-      try {
-        final int? sinceTimestamp = since?.millisecondsSinceEpoch;
-        final List<dynamic> result = await platform.invokeMethod('fetchOldSms', {
-          'since': sinceTimestamp,
-        });
-        return result.map((e) => Map<String, dynamic>.from(e)).toList();
-      } on PlatformException catch (e) {
-        AppLogger.e("Failed to fetch historical SMS: ${e.message}");
-        return [];
-      }
-    }
-
-    void dispose(){
-      platform.setMethodCallHandler(null);
-    }
-
   }
 
+  Future<List<Map<String, dynamic>>> fetchHistoricalMessages({
+    DateTime? since,
+    DateTime? until,
+  }) async {
+    try {
+      await _ensureSmsPermission();
+      final int? sinceTimestamp = since?.millisecondsSinceEpoch;
+      final int? untilTimestamp = until?.millisecondsSinceEpoch;
+      final List<dynamic> result = await platform.invokeMethod('fetchOldSms', {
+        'since': sinceTimestamp,
+        'until': untilTimestamp,
+      });
+      return result.map((e) => Map<String, dynamic>.from(e)).toList();
+    } on PlatformException catch (e) {
+      AppLogger.e("Failed to fetch historical SMS: ${e.message}");
+      rethrow;
+    }
+  }
+
+  Future<DateTime?> getEarliestMpesaMessageDate() async {
+    try {
+      await _ensureSmsPermission();
+      final timestamp = await platform.invokeMethod<int>(
+        'getEarliestMpesaSmsTimestamp',
+      );
+      return timestamp == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(timestamp);
+    } on PlatformException catch (e) {
+      AppLogger.e("Failed to find earliest M-Pesa SMS: ${e.message}");
+      rethrow;
+    }
+  }
+
+  Future<void> _ensureSmsPermission() async {
+    final status = await Permission.sms.status;
+    if (!status.isGranted) {
+      throw PlatformException(
+        code: 'SMS_PERMISSION_DENIED',
+        message: 'SMS permission is required to read message history.',
+      );
+    }
+  }
+
+  void dispose() {
+    platform.setMethodCallHandler(null);
+  }
+}

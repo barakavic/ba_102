@@ -1,6 +1,7 @@
 import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/providers/categories_provider.dart';
 import 'package:ba_102_fe/features/transactions/presentation/transactions_page.dart';
+import 'package:ba_102_fe/features/transactions/presentation/providers/transaction_month_provider.dart';
 import 'package:ba_102_fe/services/icon_service.dart';
 import 'package:ba_102_fe/services/categorization_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,9 +29,7 @@ class CategoryDetailsPage extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(category.name),
-      ),
+      appBar: AppBar(title: Text(category.name)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -43,9 +42,7 @@ class CategoryDetailsPage extends StatelessWidget {
                 _buildStatCard("TOTAL SPENT", totalSpent, Colors.red),
               ],
             ),
-            const SizedBox(
-              height: 16.0,
-            ),
+            const SizedBox(height: 16.0),
             Expanded(
               child: category.transactions.isEmpty
                   ? const Center(
@@ -58,7 +55,9 @@ class CategoryDetailsPage extends StatelessWidget {
                       itemCount: category.transactions.length,
                       itemBuilder: (context, index) {
                         final tx = category.transactions[index];
-                        final isIncome = tx.type?.toLowerCase() == 'inbound' || tx.type?.toLowerCase() == 'deposit';
+                        final isIncome =
+                            tx.type?.toLowerCase() == 'inbound' ||
+                            tx.type?.toLowerCase() == 'deposit';
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           elevation: 0,
@@ -67,9 +66,17 @@ class CategoryDetailsPage extends StatelessWidget {
                             side: BorderSide(color: Colors.grey.shade200),
                           ),
                           child: Theme(
-                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            data: Theme.of(
+                              context,
+                            ).copyWith(dividerColor: Colors.transparent),
                             child: ExpansionTile(
-                              title: Text(tx.description ?? 'No description', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              title: Text(
+                                tx.description ?? 'No description',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
                               subtitle: Text(
                                 'Date: ${tx.date?.toIso8601String().substring(0, 10) ?? 'N/A'}',
                                 style: const TextStyle(fontSize: 11),
@@ -81,16 +88,21 @@ class CategoryDetailsPage extends StatelessWidget {
                                     '${isIncome ? '+' : '-'}KES ${tx.amount?.toStringAsFixed(0) ?? '0'}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isIncome ? Colors.green.shade700 : Colors.red.shade700,
+                                      color: isIncome
+                                          ? Colors.green.shade700
+                                          : Colors.red.shade700,
                                     ),
                                   ),
                                   IconButton(
                                     icon: Icon(
-                                      Icons.drive_file_move_outlined, 
-                                      color: category.id == -1 ? Colors.orange : Colors.grey.shade400,
+                                      Icons.drive_file_move_outlined,
+                                      color: category.id == -1
+                                          ? Colors.orange
+                                          : Colors.grey.shade400,
                                       size: 18,
                                     ),
-                                    onPressed: () => _showMoveDialog(context, tx),
+                                    onPressed: () =>
+                                        _showMoveDialog(context, tx),
                                   ),
                                 ],
                               ),
@@ -98,22 +110,36 @@ class CategoryDetailsPage extends StatelessWidget {
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(12),
-                                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                  margin: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    12,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.grey.shade50,
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.grey.shade200),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "RAW M-PESA MESSAGE",
-                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.1),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                          letterSpacing: 1.1,
+                                        ),
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        tx.rawSmsMessage ?? "No raw message available.",
+                                        tx.rawSmsMessage ??
+                                            "No raw message available.",
                                         style: TextStyle(
                                           fontSize: 11,
                                           color: Colors.grey.shade800,
@@ -129,7 +155,7 @@ class CategoryDetailsPage extends StatelessWidget {
                         );
                       },
                     ),
-            )
+            ),
           ],
         ),
       ),
@@ -151,12 +177,21 @@ class CategoryDetailsPage extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color.withOpacity(0.7), letterSpacing: 1.0),
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: color.withOpacity(0.7),
+                letterSpacing: 1.0,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'KES ${amount.toStringAsFixed(0)}',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
             ),
           ],
         ),
@@ -186,12 +221,18 @@ class CategorySelectionDialog extends ConsumerWidget {
         width: double.maxFinite,
         child: categoriesAsync.when(
           data: (categories) {
-            final validCategories = categories.where((c) => c.id != -1).toList();
-            final parents = validCategories.where((c) => c.parentId == null).toList();
+            final validCategories = categories
+                .where((c) => c.id != -1)
+                .toList();
+            final parents = validCategories
+                .where((c) => c.parentId == null)
+                .toList();
             final List<Category> sortedList = [];
             for (var p in parents) {
               sortedList.add(p);
-              sortedList.addAll(validCategories.where((c) => c.parentId == p.id));
+              sortedList.addAll(
+                validCategories.where((c) => c.parentId == p.id),
+              );
             }
 
             return ListView.builder(
@@ -203,11 +244,16 @@ class CategorySelectionDialog extends ConsumerWidget {
 
                 return ListTile(
                   dense: isChild,
-                  contentPadding: EdgeInsets.only(left: isChild ? 32 : 16, right: 16),
+                  contentPadding: EdgeInsets.only(
+                    left: isChild ? 32 : 16,
+                    right: 16,
+                  ),
                   leading: Icon(
                     IconService.getIcon(cat.icon, cat.name),
                     size: isChild ? 18 : 22,
-                    color: isChild ? Colors.grey.shade400 : Colors.blue.shade700,
+                    color: isChild
+                        ? Colors.grey.shade400
+                        : Colors.blue.shade700,
                   ),
                   title: Text(
                     cat.name,
@@ -220,7 +266,7 @@ class CategorySelectionDialog extends ConsumerWidget {
                   onTap: () async {
                     final db = await DatabaseHelper.instance.database;
                     final vendor = transaction.vendor;
-                    
+
                     bool shouldPop = false;
 
                     if (vendor != null && vendor.isNotEmpty) {
@@ -228,28 +274,41 @@ class CategorySelectionDialog extends ConsumerWidget {
                         'SELECT COUNT(*) as count FROM transactions WHERE vendor = ? AND (category_id != ? OR category_id IS NULL) AND id != ?',
                         [vendor, cat.id, transaction.id],
                       );
-                      int otherCount = sqflite.Sqflite.firstIntValue(result) ?? 0;
+                      int otherCount =
+                          sqflite.Sqflite.firstIntValue(result) ?? 0;
 
                       if (otherCount > 0) {
                         if (!context.mounted) return;
                         final bool? applyToAll = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             title: const Text('Apply to all?'),
-                            content: Text('We found $otherCount other transactions from "$vendor". Do you want to move all of them to "${cat.name}"?'),
+                            content: Text(
+                              'We found $otherCount other transactions from "$vendor". Do you want to move all of them to "${cat.name}"?',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: Text('JUST THIS ONE', style: TextStyle(color: Colors.grey.shade600)),
+                                child: Text(
+                                  'JUST THIS ONE',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('MOVE ALL', style: TextStyle(color: Colors.white)),
+                                child: const Text(
+                                  'MOVE ALL',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ],
                           ),
@@ -282,9 +341,12 @@ class CategorySelectionDialog extends ConsumerWidget {
                         );
                         shouldPop = true;
                       }
-                      
+
                       // Always save the mapping for future transactions
-                      await CategorizationService().saveVendorMapping(vendor, cat.id);
+                      await CategorizationService().saveVendorMapping(
+                        vendor,
+                        cat.id,
+                      );
                     } else {
                       // No vendor, just update this one
                       await db.update(
@@ -299,6 +361,7 @@ class CategorySelectionDialog extends ConsumerWidget {
                     if (shouldPop && context.mounted) {
                       ref.invalidate(categoriesProvider);
                       ref.invalidate(txProv);
+                      ref.invalidate(transactionsForMonthProvider);
                       Navigator.pop(context); // Close selection dialog
                       Navigator.pop(context); // Go back to categories page
                     }
