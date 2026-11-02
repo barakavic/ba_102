@@ -31,7 +31,7 @@ class SpendingLimit {
       id: map['id'] as int,
       limitType: map['limit_type'] as String,
       amount: (map['amount'] as num).toDouble(),
-      alertPercentage: map['alert_percentage'] as int,
+      alertPercentage: (map['alert_percentage'] as num).toInt(),
       specificDays: (map['specific_days'] as String?)?.split(','),
       createdAt: DateTime.parse(map['created_at'] as String),
     );

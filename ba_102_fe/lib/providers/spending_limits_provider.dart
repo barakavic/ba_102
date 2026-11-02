@@ -29,22 +29,28 @@ class SpendingLimitsNotifier extends AsyncNotifier<SpendingLimit?> {
   Future<void> updateLimit(SpendingLimit limit) async {
     final service = await ref.read(spendingLimitsrepoProvider.future);
     await service.updateLimit(limit);
-
-    ref.invalidateSelf();
+    state = AsyncData(limit);
   }
 
   Future<void> createLimit(SpendingLimit limit) async {
     final service = await ref.read(spendingLimitsrepoProvider.future);
-    await service.createLimit(limit);
-
-    ref.invalidateSelf();
+    final id = await service.createLimit(limit);
+    state = AsyncData(
+      SpendingLimit(
+        id: id,
+        limitType: limit.limitType,
+        amount: limit.amount,
+        alertPercentage: limit.alertPercentage,
+        specificDays: limit.specificDays,
+        createdAt: limit.createdAt,
+      ),
+    );
   }
 
   Future<void> deleteLimit(int id) async {
     final service = await ref.read(spendingLimitsrepoProvider.future);
     await service.deleteLimit(id);
-
-    ref.invalidateSelf();
+    state = const AsyncData(null);
   }
 }
 
