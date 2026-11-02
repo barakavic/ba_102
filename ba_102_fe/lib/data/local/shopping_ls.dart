@@ -180,5 +180,49 @@ catch(e, st){
       rethrow;
     }
   }
+
+  Future<Map<String, ShoppingListSummary>> getListSummaries() async {
+    try {
+      final rows = await db.rawQuery('''
+        SELECT 
+          list_id,
+          COUNT(id) as total_items,
+          SUM(CASE WHEN is_bought = 1 THEN 1 ELSE 0 END) as bought_items,
+          SUM(estimated_price * (CASE WHEN quantity > 0 THEN quantity ELSE 1 END)) as total_cost
+        FROM shopping_items
+        GROUP BY list_id
+      ''');
+
+      final map = <String, ShoppingListSummary>{};
+      for (final row in rows) {
+        final id = row['list_id'] as String;
+        map[id] = ShoppingListSummary(
+          listId: id,
+          totalItems: (row['total_items'] as int?) ?? 0,
+          boughtItems: (row['bought_items'] as int?) ?? 0,
+          totalCost: (row['total_cost'] as num?)?.toDouble() ?? 0.0,
+        );
+      }
+      return map;
+    } catch (e, st) {
+      AppLogger.e('Failed to get list summaries', error: e, stackTrace: st);
+      return {};
+    }
+  }
 }
+
+class ShoppingListSummary {
+  final String listId;
+  final int totalItems;
+  final int boughtItems;
+  final double totalCost;
+
+  const ShoppingListSummary({
+    required this.listId,
+    required this.totalItems,
+    required this.boughtItems,
+    required this.totalCost,
+  });
+}
+
 

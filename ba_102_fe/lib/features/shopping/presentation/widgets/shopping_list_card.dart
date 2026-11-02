@@ -1,10 +1,12 @@
 import 'package:ba_102_fe/data/models/shopping_list_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ShoppingListCard extends StatelessWidget {
   final ShoppingListModel list;
   final int totalItems;
   final int boughtItems;
+  final double? totalCost;
   final bool isSelected;
   final bool isSelectionMode;
   final VoidCallback onTap;
@@ -15,6 +17,7 @@ class ShoppingListCard extends StatelessWidget {
     required this.list,
     required this.totalItems,
     required this.boughtItems,
+    this.totalCost,
     required this.isSelected,
     required this.isSelectionMode,
     required this.onTap,
@@ -28,7 +31,9 @@ class ShoppingListCard extends StatelessWidget {
     return const Color(0xFF4B0082);
   }
 
-  double get _progress => totalItems == 0 ? 0.0 : boughtItems / totalItems;
+  double get _progress => totalItems == 0 ? 0.0 : (boughtItems / totalItems).clamp(0.0, 1.0);
+
+  bool get _isComplete => totalItems > 0 && boughtItems >= totalItems;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +47,7 @@ class ShoppingListCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? _listColor.withOpacity(0.12)
+              ? _listColor.withValues(alpha: 0.12)
               : theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -51,7 +56,7 @@ class ShoppingListCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -61,30 +66,52 @@ class ShoppingListCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
+              // 1. Leading progress indicator
               SizedBox(
-                width: 48,
-                height: 48,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: _progress,
-                      strokeWidth: 4,
-                      backgroundColor: _listColor.withOpacity(0.15),
-                      valueColor: AlwaysStoppedAnimation<Color>(_listColor),
-                    ),
-                    Text(
-                      '$boughtItems',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: _listColor,
+                width: 46,
+                height: 46,
+                child: totalItems == 0
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: _listColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.shopping_bag_outlined,
+                          color: _listColor.withValues(alpha: 0.7),
+                          size: 22,
+                        ),
+                      )
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            value: _progress,
+                            strokeWidth: 4,
+                            backgroundColor: _listColor.withValues(alpha: 0.15),
+                            valueColor: AlwaysStoppedAnimation<Color>(_listColor),
+                          ),
+                          if (_isComplete)
+                            Icon(
+                              Icons.check_rounded,
+                              size: 20,
+                              color: _listColor,
+                            )
+                          else
+                            Text(
+                              '$boughtItems',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: _listColor,
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
+
+              // 2. Title & subtitle
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,14 +126,50 @@ class ShoppingListCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$boughtItems of $totalItems items',
+                      totalItems == 0
+                          ? '0 items'
+                          : '$boughtItems of $totalItems bought',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
+
+              // 3. Total Cost / Budget badge
+              if (totalCost != null && totalCost! > 0) ...[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'KES ${NumberFormat('#,###').format(totalCost!.toInt())}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: _listColor,
+                      ),
+                    ),
+                    if (list.budgetLimit != null && list.budgetLimit! > 0)
+                      Text(
+                        'limit ${NumberFormat('#,###').format(list.budgetLimit!.toInt())}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: totalCost! > list.budgetLimit!
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          fontWeight: totalCost! > list.budgetLimit!
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+              ],
+
+              // 4. Selection Checkbox or Chevron
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: isSelectionMode
@@ -122,7 +185,7 @@ class ShoppingListCard extends StatelessWidget {
                     : Icon(
                         Icons.chevron_right_rounded,
                         key: const ValueKey('arrow'),
-                        color: theme.colorScheme.onSurface.withOpacity(0.3),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                       ),
               ),
             ],

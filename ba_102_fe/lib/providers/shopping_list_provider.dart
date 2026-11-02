@@ -34,6 +34,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
     await service.createShoppingList(list);
 
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
   }
 
@@ -42,6 +43,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
   Future<void> updateList(ShoppingListModel updatedList)async{
     final service = await ref.read(shoppingLsProvider.future);
     await service.updateList(updatedList);
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
   }
 
@@ -49,6 +51,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
     final service = await ref.read(shoppingLsProvider.future);
     await service.deleteShoppingList(listId);
 
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
     
   }
@@ -58,6 +61,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
     final service = await ref.read(shoppingLsProvider.future);
     await service.clearAllLists();
 
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
   }
 
@@ -80,6 +84,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
   final shoppingListsProvider = AsyncNotifierProvider<ShoppingListNotifier, List<ShoppingListModel>>((){
     return ShoppingListNotifier();
 
+  });
+
+  final shoppingListSummariesProvider =
+      FutureProvider<Map<String, ShoppingListSummary>>((ref) async {
+    final service = await ref.watch(shoppingLsProvider.future);
+    return await service.getListSummaries();
   });
 
   

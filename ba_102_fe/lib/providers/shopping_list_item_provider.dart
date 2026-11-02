@@ -17,6 +17,7 @@ class ShoppingListItemProvider extends FamilyAsyncNotifier<List<ShoppingListItem
 
     await service.createShoppingListItem(shoppingItem);
 
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
   }
 
@@ -24,6 +25,7 @@ class ShoppingListItemProvider extends FamilyAsyncNotifier<List<ShoppingListItem
     final service = await ref.read(shoppingLsProvider.future);
     await service.deleteShoppingListItem(id);
 
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
     
   }
@@ -32,6 +34,7 @@ class ShoppingListItemProvider extends FamilyAsyncNotifier<List<ShoppingListItem
     final service = await ref.read(shoppingLsProvider.future);
     await service.updateListItem(item);
 
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
   }
 
@@ -41,6 +44,7 @@ class ShoppingListItemProvider extends FamilyAsyncNotifier<List<ShoppingListItem
   ) async {
     final service = await ref.read(shoppingLsProvider.future);
     await service.saveItemsForList(listId, items);
+    ref.invalidate(shoppingListSummariesProvider);
     ref.invalidateSelf();
   }
 } 

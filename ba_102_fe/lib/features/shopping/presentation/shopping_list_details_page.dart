@@ -261,20 +261,30 @@ class _ShoppingListDetailsPageState
     final listId = widget.list.id;
     if (listId == null) return;
     try {
-      final service = await ref.read(shoppingLsProvider.future);
-      await service.updateListItem(
-        ShoppingListItemModel(
-          id: item.id,
-          listId: listId,
-          name: item.name,
-          estimatedPrice: item.price,
-          quantity: item.quantity.toInt(),
-          isBought: item.isBought,
-          brand: item.brand,
-          expiryDate: item.expiryDate,
-          volume: item.volume,
-        ),
+      String? categoryName;
+      for (final cat in _categories) {
+        if (cat.items.contains(item)) {
+          categoryName = cat.name.isNotEmpty ? cat.name : null;
+          break;
+        }
+      }
+
+      final updatedModel = ShoppingListItemModel(
+        id: item.id,
+        listId: listId,
+        name: item.name,
+        category: categoryName,
+        estimatedPrice: item.price,
+        quantity: item.quantity.toInt(),
+        isBought: item.isBought,
+        brand: item.brand,
+        expiryDate: item.expiryDate,
+        volume: item.volume,
       );
+
+      await ref
+          .read(shoppingListItemsProvider(listId).notifier)
+          .updateShoppingListItem(updatedModel);
     } catch (_) {}
   }
 
