@@ -1,4 +1,5 @@
 import 'package:ba_102_fe/data/models/shopping_list_model.dart';
+import 'package:ba_102_fe/features/shopping/presentation/utils/budget_culprit_helper.dart';
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detail_appbar.dart';
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detail_total.dart';
 import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/shopping_list_detaiil_category.dart';
@@ -438,6 +439,19 @@ class _ShoppingListDetailsPageState
             (sum, category) => sum + category.total,
           );
 
+          // Overall budget limit check
+          final hasTotalLimit =
+              widget.list.budgetLimit != null && widget.list.budgetLimit! > 0;
+          final isTotalOverBudget =
+              hasTotalLimit && currentTotal > widget.list.budgetLimit!;
+          final totalOverspend =
+              isTotalOverBudget ? currentTotal - widget.list.budgetLimit! : 0.0;
+
+          final overallCulprit = isTotalOverBudget
+              ? BudgetCulpritHelper.findOverallCulprit(
+                  _categories, totalOverspend)
+              : null;
+
           // Detect duplicate category names (case-insensitive)
           final categoryNameCounts = <String, int>{};
           for (final cat in _categories) {
@@ -470,6 +484,8 @@ class _ShoppingListDetailsPageState
                 budgetLimit: widget.list.budgetLimit,
                 accentColor: _listColor,
                 isEditMode: _isEditMode,
+                isAddDisabled: isTotalOverBudget,
+                overallCulprit: overallCulprit,
                 onAddCategory: _addCategory,
               ),
 
@@ -536,12 +552,36 @@ class _ShoppingListDetailsPageState
                           itemCount: visibleCategories.length,
                           itemBuilder: (context, index) {
                             final category = visibleCategories[index];
+                            final hasCatLimit = category.categoryBudget != null &&
+                                category.categoryBudget! > 0;
+                            final isCatOver = hasCatLimit &&
+                                category.total > category.categoryBudget!;
+                            final categoryCulprit = isCatOver
+                                ? BudgetCulpritHelper.findCategoryCulprit(category)
+                                : null;
+
+                            final isCategoryAddDisabled =
+                                isTotalOverBudget || isCatOver;
+                            final addDisabledReason = isTotalOverBudget
+                                ? 'Total budget limit reached'
+                                : (isCatOver
+                                    ? 'Category budget limit reached'
+                                    : null);
+
+                            final culpritItemId = isTotalOverBudget
+                                ? overallCulprit?.item.id
+                                : categoryCulprit?.item.id;
+
                             return ShoppingListDetailCategory(
                               key: ValueKey(category.id),
                               category: category,
                               isEditMode: _isEditMode,
                               hasDuplicateCategoryName: duplicateCategoryNames
                                   .contains(category.name.toLowerCase()),
+                              isAddDisabled: isCategoryAddDisabled,
+                              addDisabledReason: addDisabledReason,
+                              categoryCulprit: categoryCulprit,
+                              culpritItemId: culpritItemId,
                               onAddItem: () => _addItemToCategory(category),
                               onToggleItem: _toggleItem,
                               onToggleCollapse: () {

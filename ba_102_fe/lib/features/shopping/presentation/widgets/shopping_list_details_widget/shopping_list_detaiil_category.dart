@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:ba_102_fe/features/shopping/presentation/utils/budget_culprit_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -181,6 +182,10 @@ class ShoppingListDetailCategory extends StatelessWidget {
   final CategoryDraft category;
   final bool isEditMode;
   final bool hasDuplicateCategoryName;
+  final bool isAddDisabled;
+  final String? addDisabledReason;
+  final BudgetCulprit? categoryCulprit;
+  final String? culpritItemId;
   final VoidCallback onAddItem;
   final ValueChanged<CategoryItemDraft> onToggleItem;
   final VoidCallback onItemChanged;
@@ -195,6 +200,10 @@ class ShoppingListDetailCategory extends StatelessWidget {
     required this.category,
     this.isEditMode = true,
     this.hasDuplicateCategoryName = false,
+    this.isAddDisabled = false,
+    this.addDisabledReason,
+    this.categoryCulprit,
+    this.culpritItemId,
     required this.onAddItem,
     required this.onToggleItem,
     required this.onItemChanged,
@@ -696,6 +705,68 @@ class ShoppingListDetailCategory extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
+          if (isOverBudget && categoryCulprit != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.balance,
+                    size: 16,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.error,
+                              fontSize: 11,
+                            ),
+                            children: [
+                              const TextSpan(
+                                text: 'Likeliest culprit: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: categoryCulprit!.item.name.isEmpty
+                                    ? 'Unnamed Item'
+                                    : categoryCulprit!.item.name,
+                                style: const TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          categoryCulprit!.recommendation,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 10.5,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           
           if (category.items.isEmpty)
             Padding(
@@ -755,6 +826,7 @@ class ShoppingListDetailCategory extends StatelessWidget {
                     item: item,
                     isEditMode: isEditMode,
                     isDuplicate: duplicateIds.contains(item.id),
+                    isCulprit: item.id == culpritItemId,
                     accentColor: color,
                     onToggle: () => onToggleItem(item),
                     onChanged: onItemChanged,
@@ -805,10 +877,12 @@ class ShoppingListDetailCategory extends StatelessWidget {
               children: [
                 FloatingActionButton.small(
                   heroTag: 'add-item-${category.id}',
-                  backgroundColor: color,
+                  backgroundColor: isAddDisabled ? Colors.grey.shade400 : color,
                   foregroundColor: Colors.white,
-                  tooltip: 'Add item to ${category.name}',
-                  onPressed: onAddItem,
+                  tooltip: isAddDisabled
+                      ? (addDisabledReason ?? 'Budget limit reached')
+                      : 'Add item to ${category.name}',
+                  onPressed: isAddDisabled ? null : onAddItem,
                   child: const Icon(Icons.add, size: 20),
                 ),
               ],
@@ -824,6 +898,7 @@ class _CategoryItemRow extends StatelessWidget {
   final CategoryItemDraft item;
   final bool isEditMode;
   final bool isDuplicate;
+  final bool isCulprit;
   final Color accentColor;
   final VoidCallback onToggle;
   final VoidCallback onChanged;
@@ -835,6 +910,7 @@ class _CategoryItemRow extends StatelessWidget {
     required this.item,
     required this.isEditMode,
     this.isDuplicate = false,
+    this.isCulprit = false,
     required this.accentColor,
     required this.onToggle,
     required this.onChanged,
@@ -844,7 +920,6 @@ class _CategoryItemRow extends StatelessWidget {
 
   void _showItemOptions(BuildContext context) {
     final theme = Theme.of(context);
-    final formatter = NumberFormat('dd MMM yyyy');
     final itemName = item.name.isEmpty ? 'Item' : item.name;
 
     showModalBottomSheet(
@@ -1175,7 +1250,8 @@ class _CategoryItemRow extends StatelessWidget {
 
     final hasMetadata = (item.brand != null && item.brand!.isNotEmpty) ||
         (item.volume != null && item.volume!.isNotEmpty) ||
-        item.expiryDate != null;
+        item.expiryDate != null ||
+        isCulprit;
 
     Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1288,7 +1364,23 @@ class _CategoryItemRow extends StatelessWidget {
         ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
         : theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
+    if (isCulprit) {
+      parts.add(Tooltip(
+        message: 'Likeliest budget culprit',
+        child: Icon(
+          Icons.warning_rounded,
+          size: 13,
+          color: theme.brightness == Brightness.dark
+              ? Colors.amber.shade400
+              : Colors.amber.shade800,
+        ),
+      ));
+    }
+
     if (item.brand != null && item.brand!.isNotEmpty) {
+      if (parts.isNotEmpty) {
+        parts.add(Text(' • ', style: TextStyle(fontSize: 10, color: baseColor)));
+      }
       parts.add(Row(
         mainAxisSize: MainAxisSize.min,
         children: [
