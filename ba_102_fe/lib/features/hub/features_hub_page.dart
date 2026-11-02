@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ba_102_fe/features/shopping/presentation/shopping_lists_page.dart';
-import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
 import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
 import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
 
@@ -21,13 +20,6 @@ class FeaturesHubPage extends StatelessWidget {
         'page': const ShoppingListsPage(),
       },
       {
-        'title': 'Budget Plans',
-        'subtitle': 'Set budget limits & targets',
-        'icon': Icons.insights_outlined,
-        'color': const Color(0xFF4B0082),
-        'page': const PlansPage(),
-      },
-      {
         'title': 'Categories',
         'subtitle': 'Manage custom categories',
         'icon': Icons.category_outlined,
@@ -35,8 +27,8 @@ class FeaturesHubPage extends StatelessWidget {
         'page': const CategoriesPage(),
       },
       {
-        'title': 'Savings Goals',
-        'subtitle': 'Track financial savings goals',
+        'title': 'Goals & Budgets',
+        'subtitle': 'Save toward goals and manage spending limits',
         'icon': Icons.savings_outlined,
         'color': const Color(0xFFFF9800),
         'page': const GoalsPage(),

@@ -7,6 +7,8 @@ class Transaction {
   final DateTime? date;
   final int? categoryId;
   final int? planId;
+  final int? goalId;
+  final String? goalAssignmentSource;
   final String type;
   final String? vendor;
   final String? mpesaReference;
@@ -22,6 +24,8 @@ class Transaction {
     this.date,
     this.categoryId,
     this.planId,
+    this.goalId,
+    this.goalAssignmentSource,
     this.balance,
     this.mpesaReference,
     this.rawSmsMessage,
@@ -33,53 +37,59 @@ class Transaction {
 
   // API deserialization
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
-        id: json['id'],
-        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-        description: json['description'] ?? '',
-        date: json['date'] != null ? DateTime.parse(json['date']) : null,
-        categoryId: json['categoryId'],
-        planId: json['plan_id'],
-        balance: (json['balance'] as num?)?.toDouble() ?? 0,
-        rawSmsMessage: json['raw_sms_message'] as String?,
-        type: json['type'] ?? 'outbound',
-        vendor: json['vendor'],
-        mpesaReference: json['mpesa_reference'],
-        clientId: json['clientId'] ?? json['client_id'],
-        isSynced: true, // If it comes from API, it's synced
-      );
+    id: json['id'],
+    amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+    description: json['description'] ?? '',
+    date: json['date'] != null ? DateTime.parse(json['date']) : null,
+    categoryId: json['categoryId'],
+    planId: json['plan_id'],
+    goalId: json['goal_id'],
+    goalAssignmentSource: json['goal_assignment_source'] as String?,
+    balance: (json['balance'] as num?)?.toDouble() ?? 0,
+    rawSmsMessage: json['raw_sms_message'] as String?,
+    type: json['type'] ?? 'outbound',
+    vendor: json['vendor'],
+    mpesaReference: json['mpesa_reference'],
+    clientId: json['clientId'] ?? json['client_id'],
+    isSynced: true, // If it comes from API, it's synced
+  );
 
   // Local DB mapping
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'amount': amount,
-        'description': description,
-        'date': date?.toIso8601String(),
-        'category_id': categoryId,
-        'plan_id': planId,
-        'type': type,
-        'vendor': vendor,
-        'mpesa_reference': mpesaReference,
-        'balance': balance,
-        'raw_sms_message': rawSmsMessage,
-        'client_id': clientId,
-        'is_synced': isSynced ? 1 : 0,
-      };
+    'id': id,
+    'amount': amount,
+    'description': description,
+    'date': date?.toIso8601String(),
+    'category_id': categoryId,
+    'plan_id': planId,
+    'goal_id': goalId,
+    'goal_assignment_source': goalAssignmentSource,
+    'type': type,
+    'vendor': vendor,
+    'mpesa_reference': mpesaReference,
+    'balance': balance,
+    'raw_sms_message': rawSmsMessage,
+    'client_id': clientId,
+    'is_synced': isSynced ? 1 : 0,
+  };
 
   factory Transaction.fromMap(Map<String, dynamic> map) => Transaction(
-        id: map['id'],
-        amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
-        description: map['description'] ?? '',
-        date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
-        categoryId: map['category_id'] as int?,
-        planId: map['plan_id'] as int?,
-        type: map['type'] as String? ?? 'outbound',
-        vendor: map['vendor'] as String?,
-        mpesaReference: map['mpesa_reference'] as String?,
-        balance: (map['balance'] as num?)?.toDouble(),
-        rawSmsMessage: map['raw_sms_message'] as String?,
-        clientId: map['client_id'] as String?,
-        isSynced: (map['is_synced'] as int? ?? 0) == 1,
-      );
+    id: map['id'],
+    amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+    description: map['description'] ?? '',
+    date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+    categoryId: map['category_id'] as int?,
+    planId: map['plan_id'] as int?,
+    goalId: map['goal_id'] as int?,
+    goalAssignmentSource: map['goal_assignment_source'] as String?,
+    type: map['type'] as String? ?? 'outbound',
+    vendor: map['vendor'] as String?,
+    mpesaReference: map['mpesa_reference'] as String?,
+    balance: (map['balance'] as num?)?.toDouble(),
+    rawSmsMessage: map['raw_sms_message'] as String?,
+    clientId: map['client_id'] as String?,
+    isSynced: (map['is_synced'] as int? ?? 0) == 1,
+  );
 
   Transaction copyWith({
     int? id,
@@ -88,6 +98,8 @@ class Transaction {
     DateTime? date,
     int? categoryId,
     int? planId,
+    int? goalId,
+    String? goalAssignmentSource,
     String? type,
     String? vendor,
     String? mpesaReference,
@@ -103,6 +115,8 @@ class Transaction {
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
       planId: planId ?? this.planId,
+      goalId: goalId ?? this.goalId,
+      goalAssignmentSource: goalAssignmentSource ?? this.goalAssignmentSource,
       type: type ?? this.type,
       vendor: vendor ?? this.vendor,
       mpesaReference: mpesaReference ?? this.mpesaReference,
@@ -115,21 +129,21 @@ class Transaction {
 
   // API serialization (matches Spring Boot camelCase)
   Map<String, dynamic> toJson() => {
-        'amount': amount,
-        'description': description,
-        'date': date?.toIso8601String(),
-        'type': type,
-        'vendor': vendor,
-        'mpesaReference': mpesaReference,
-        'balance': balance,
-        'rawSmsMessage': rawSmsMessage,
-        'clientId': clientId,
-        // Note: plan and category are handled as nested objects if needed, 
-        // but for basic sync, IDs or nulls are often enough depending on backend logic.
-      };
+    'amount': amount,
+    'description': description,
+    'date': date?.toIso8601String(),
+    'type': type,
+    'vendor': vendor,
+    'mpesaReference': mpesaReference,
+    'balance': balance,
+    'rawSmsMessage': rawSmsMessage,
+    'clientId': clientId,
+    // Note: plan and category are handled as nested objects if needed,
+    // but for basic sync, IDs or nulls are often enough depending on backend logic.
+  };
 }
 
-class Category{
+class Category {
   final int id;
   final String name;
   final double limitAmount;
@@ -149,13 +163,17 @@ class Category{
   });
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-    id: json['id'], 
-    name: json['name'], 
+    id: json['id'],
+    name: json['name'],
     limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
     icon: json['icon'] as String?,
     color: json['color'] as String?,
     parentId: json['parent_id'] as int?,
-    transactions: (json['transactions'] as List?)?.map((t) => Transaction.fromJson(t)).toList() ?? [],
+    transactions:
+        (json['transactions'] as List?)
+            ?.map((t) => Transaction.fromJson(t))
+            .toList() ??
+        [],
   );
 
   Map<String, dynamic> toMap() => {
@@ -168,13 +186,13 @@ class Category{
   };
 
   factory Category.fromMap(Map<String, dynamic> map) => Category(
-    id: map['id'] as int, 
-    name: map['name'] ?? '', 
+    id: map['id'] as int,
+    name: map['name'] ?? '',
     limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
     icon: map['icon'] as String?,
     color: map['color'] as String?,
     parentId: map['parent_id'] as int?,
-    transactions: const[],
+    transactions: const [],
   );
 
   Category copyWith({
@@ -218,11 +236,11 @@ class Plan {
   });
 
   factory Plan.fromJson(Map<String, dynamic> json) => Plan(
-    id: json['id'], 
-    name: json['name'], 
-    startDate: DateTime.parse(json['start_date']), 
-    endDate: DateTime.parse(json['end_date']), 
-    status: json['status'] ?? 'ACTIVE', 
+    id: json['id'],
+    name: json['name'],
+    startDate: DateTime.parse(json['start_date']),
+    endDate: DateTime.parse(json['end_date']),
+    status: json['status'] ?? 'ACTIVE',
     limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0.0,
     planType: json['plan_type'] ?? 'monthly',
   );
@@ -238,11 +256,11 @@ class Plan {
   };
 
   factory Plan.fromMap(Map<String, dynamic> map) => Plan(
-    id: map['id'], 
-    name: map['name'], 
-    startDate: DateTime.parse(map['start_date']), 
-    endDate: DateTime.parse(map['end_date']), 
-    status: map['status'] ?? 'ACTIVE', 
+    id: map['id'],
+    name: map['name'],
+    startDate: DateTime.parse(map['start_date']),
+    endDate: DateTime.parse(map['end_date']),
+    status: map['status'] ?? 'ACTIVE',
     limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0.0,
     planType: map['plan_type'] ?? 'monthly',
   );
@@ -250,10 +268,25 @@ class Plan {
 
 class Goal {
   final int? id;
+  final DateTime? createdAt;
   final String name;
-  final double targetAmount;
+  final String kind;
+  final String planningMode;
+  final double? targetAmount;
   final double currentAmount;
   final DateTime? deadline;
+  final String? photoPath;
+  final String? accountName;
+  final String scheduleType;
+  final List<int> savingDays;
+  final int contributionsPerWeek;
+  final double? contributionAmount;
+  final double limitAmount;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String budgetStatus;
+  final int? legacyPlanId;
+  final int? legacyGoalId;
   final double? marketPrice;
   final String? trackingUrl;
   final DateTime? lastChecked;
@@ -263,10 +296,25 @@ class Goal {
 
   Goal({
     this.id,
+    this.createdAt,
     required this.name,
-    required this.targetAmount,
+    this.kind = 'product',
+    this.planningMode = 'deadline',
+    this.targetAmount,
     this.currentAmount = 0.0,
     this.deadline,
+    this.photoPath,
+    this.accountName,
+    this.scheduleType = 'weekly',
+    this.savingDays = const [],
+    this.contributionsPerWeek = 3,
+    this.contributionAmount,
+    this.limitAmount = 0,
+    this.startDate,
+    this.endDate,
+    this.budgetStatus = 'ACTIVE',
+    this.legacyPlanId,
+    this.legacyGoalId,
     this.marketPrice,
     this.trackingUrl,
     this.lastChecked,
@@ -276,68 +324,129 @@ class Goal {
   });
 
   factory Goal.fromJson(Map<String, dynamic> json) => Goal(
-        id: json['id'],
-        name: json['name'],
-        targetAmount: (json['targetAmount'] as num?)?.toDouble() ?? 0.0,
-        currentAmount: (json['currentAmount'] as num?)?.toDouble() ?? 0.0,
-        deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
-        marketPrice: (json['marketPrice'] as num?)?.toDouble(),
-        trackingUrl: json['trackingUrl'],
-        lastChecked: json['lastChecked'] != null ? DateTime.parse(json['lastChecked']) : null,
-        marketStatus: json['marketStatus'],
-        currency: json['currency'],
-        rationale: json['rationale'],
-      );
+    id: json['id'],
+    name: json['name'],
+    targetAmount: (json['targetAmount'] as num?)?.toDouble(),
+    currentAmount: (json['currentAmount'] as num?)?.toDouble() ?? 0.0,
+    deadline: json['deadline'] != null
+        ? DateTime.parse(json['deadline'])
+        : null,
+    legacyGoalId: json['id'] as int?,
+    marketPrice: (json['marketPrice'] as num?)?.toDouble(),
+    trackingUrl: json['trackingUrl'],
+    lastChecked: json['lastChecked'] != null
+        ? DateTime.parse(json['lastChecked'])
+        : null,
+    marketStatus: json['marketStatus'],
+    currency: json['currency'],
+    rationale: json['rationale'],
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'targetAmount': targetAmount,
-        'currentAmount': currentAmount,
-        'deadline': deadline?.toIso8601String(),
-        'marketPrice': marketPrice,
-        'trackingUrl': trackingUrl,
-        'lastChecked': lastChecked?.toIso8601String(),
-        'marketStatus': marketStatus,
-        'currency': currency,
-        'rationale': rationale,
-      };
+    'id': id,
+    'name': name,
+    'targetAmount': targetAmount,
+    'currentAmount': currentAmount,
+    'deadline': deadline?.toIso8601String(),
+    'marketPrice': marketPrice,
+    'trackingUrl': trackingUrl,
+    'lastChecked': lastChecked?.toIso8601String(),
+    'marketStatus': marketStatus,
+    'currency': currency,
+    'rationale': rationale,
+  };
 
   // Local DB mapping
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'target_amount': targetAmount,
-        'current_amount': currentAmount,
-        'deadline': deadline?.toIso8601String(),
-        'market_price': marketPrice,
-        'tracking_url': trackingUrl,
-        'last_checked': lastChecked?.toIso8601String(),
-        'market_status': marketStatus,
-        'currency': currency,
-        'rationale': rationale,
-      };
+    'id': id,
+    'name': name,
+    'kind': kind,
+    'planning_mode': planningMode,
+    'target_amount': targetAmount,
+    'current_amount': currentAmount,
+    'deadline': deadline?.toIso8601String(),
+    'photo_path': photoPath,
+    'account_name': accountName,
+    'schedule_type': scheduleType,
+    'saving_days': savingDays.join(','),
+    'contributions_per_week': contributionsPerWeek,
+    'contribution_amount': contributionAmount,
+    'limit_amount': limitAmount,
+    'start_date': startDate?.toIso8601String(),
+    'end_date': endDate?.toIso8601String(),
+    'budget_status': budgetStatus,
+    'legacy_plan_id': legacyPlanId,
+    'legacy_goal_id': legacyGoalId,
+    'market_price': marketPrice,
+    'tracking_url': trackingUrl,
+    'last_checked': lastChecked?.toIso8601String(),
+    'market_status': marketStatus,
+    'currency': currency,
+    'rationale': rationale,
+  };
 
   factory Goal.fromMap(Map<String, dynamic> map) => Goal(
-        id: map['id'],
-        name: map['name'],
-        targetAmount: (map['target_amount'] as num?)?.toDouble() ?? 0.0,
-        currentAmount: (map['current_amount'] as num?)?.toDouble() ?? 0.0,
-        deadline: map['deadline'] != null ? DateTime.parse(map['deadline']) : null,
-        marketPrice: (map['market_price'] as num?)?.toDouble(),
-        trackingUrl: map['tracking_url'],
-        lastChecked: map['last_checked'] != null ? DateTime.parse(map['last_checked']) : null,
-        marketStatus: map['market_status'],
-        currency: map['currency'],
-        rationale: map['rationale'],
-      );
+    id: map['id'],
+    createdAt: map['created_at'] == null
+        ? null
+        : DateTime.tryParse(map['created_at'] as String),
+    name: map['name'],
+    kind: map['kind'] as String? ?? 'product',
+    planningMode: map['planning_mode'] as String? ?? 'deadline',
+    targetAmount: (map['target_amount'] as num?)?.toDouble(),
+    currentAmount: (map['current_amount'] as num?)?.toDouble() ?? 0.0,
+    deadline: map['deadline'] != null ? DateTime.parse(map['deadline']) : null,
+    photoPath: map['photo_path'] as String?,
+    accountName: map['account_name'] as String?,
+    scheduleType: map['schedule_type'] as String? ?? 'weekly',
+    savingDays: (map['saving_days'] as String? ?? '')
+        .split(',')
+        .where((v) => v.isNotEmpty)
+        .map(int.parse)
+        .toList(),
+    contributionsPerWeek: (map['contributions_per_week'] as num?)?.toInt() ?? 3,
+    contributionAmount: (map['contribution_amount'] as num?)?.toDouble(),
+    limitAmount: (map['limit_amount'] as num?)?.toDouble() ?? 0,
+    startDate: map['start_date'] == null
+        ? null
+        : DateTime.parse(map['start_date'] as String),
+    endDate: map['end_date'] == null
+        ? null
+        : DateTime.parse(map['end_date'] as String),
+    budgetStatus: map['budget_status'] as String? ?? 'ACTIVE',
+    legacyPlanId: (map['legacy_plan_id'] as num?)?.toInt(),
+    legacyGoalId: (map['legacy_goal_id'] as num?)?.toInt(),
+    marketPrice: (map['market_price'] as num?)?.toDouble(),
+    trackingUrl: map['tracking_url'] as String?,
+    lastChecked: map['last_checked'] == null
+        ? null
+        : DateTime.parse(map['last_checked'] as String),
+    marketStatus: map['market_status'] as String?,
+    currency: map['currency'] as String?,
+    rationale: map['rationale'] as String?,
+  );
 
   Goal copyWith({
     int? id,
+    DateTime? createdAt,
     String? name,
+    String? kind,
+    String? planningMode,
     double? targetAmount,
     double? currentAmount,
     DateTime? deadline,
+    String? photoPath,
+    String? accountName,
+    String? scheduleType,
+    List<int>? savingDays,
+    int? contributionsPerWeek,
+    double? contributionAmount,
+    double? limitAmount,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? budgetStatus,
+    int? legacyPlanId,
+    int? legacyGoalId,
     double? marketPrice,
     String? trackingUrl,
     DateTime? lastChecked,
@@ -347,10 +456,25 @@ class Goal {
   }) {
     return Goal(
       id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
       name: name ?? this.name,
+      kind: kind ?? this.kind,
+      planningMode: planningMode ?? this.planningMode,
       targetAmount: targetAmount ?? this.targetAmount,
       currentAmount: currentAmount ?? this.currentAmount,
       deadline: deadline ?? this.deadline,
+      photoPath: photoPath ?? this.photoPath,
+      accountName: accountName ?? this.accountName,
+      scheduleType: scheduleType ?? this.scheduleType,
+      savingDays: savingDays ?? this.savingDays,
+      contributionsPerWeek: contributionsPerWeek ?? this.contributionsPerWeek,
+      contributionAmount: contributionAmount ?? this.contributionAmount,
+      limitAmount: limitAmount ?? this.limitAmount,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      budgetStatus: budgetStatus ?? this.budgetStatus,
+      legacyPlanId: legacyPlanId ?? this.legacyPlanId,
+      legacyGoalId: legacyGoalId ?? this.legacyGoalId,
       marketPrice: marketPrice ?? this.marketPrice,
       trackingUrl: trackingUrl ?? this.trackingUrl,
       lastChecked: lastChecked ?? this.lastChecked,

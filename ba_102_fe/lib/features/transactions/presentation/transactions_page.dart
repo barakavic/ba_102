@@ -4,7 +4,7 @@ import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 import 'package:ba_102_fe/features/categories/presentation/categories_page.dart';
-import 'package:ba_102_fe/features/plans/presentation/plans_page.dart';
+import 'package:ba_102_fe/features/goals/presentation/goals_page.dart';
 import 'package:ba_102_fe/providers/sms_provider.dart';
 import 'package:ba_102_fe/services/Sms_Message_Parser.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +75,7 @@ class TransactionsPage extends ConsumerWidget {
             tabs: [
               Tab(text: 'Transactions'),
               Tab(text: 'Categories'),
-              Tab(text: 'Plans'),
+              Tab(text: 'Goals'),
             ],
           ),
           Expanded(
@@ -83,7 +83,7 @@ class TransactionsPage extends ConsumerWidget {
               children: [
                 const TransactionDetailsView(),
                 CategoriesPage(),
-                PlansPage(),
+                GoalsPage(),
               ],
             ),
           ),

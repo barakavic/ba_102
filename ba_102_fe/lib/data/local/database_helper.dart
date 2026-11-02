@@ -14,7 +14,7 @@ class DatabaseHelper {
   final DatabaseEncryptionService _encryptionService =
       DatabaseEncryptionService();
 
-  static const int _schemaVersion = 16;
+  static const int _schemaVersion = 19;
   static const String _confirmationCode = 'BA102-DB-ENC-OK';
   static const List<int> _sqliteHeader = <int>[
     83,
@@ -335,6 +335,8 @@ CREATE TABLE budget_plans (
    );
     ''');
 
+    await _createUnifiedGoalsTables(db);
+
     await db.execute('''
 CREATE TABLE budget_category (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -362,6 +364,8 @@ CREATE TABLE transactions (
     raw_sms_message TEXT,
     client_id TEXT UNIQUE,
     is_synced INTEGER DEFAULT 0,
+    goal_id INTEGER,
+    goal_assignment_source TEXT,
     FOREIGN KEY (category_id) REFERENCES budget_category(id),
     FOREIGN KEY (plan_id) REFERENCES budget_plans(id)
 );
@@ -455,6 +459,43 @@ CREATE TABLE app_preferences (
     int oldVersion,
     int newVersion,
   ) async {
+    if (oldVersion < 17) {
+      await _createUnifiedGoalsTables(db);
+      final transactionColumns = await db.rawQuery(
+        'PRAGMA table_info(transactions)',
+      );
+      if (!transactionColumns.any((column) => column['name'] == 'goal_id')) {
+        await db.execute('ALTER TABLE transactions ADD COLUMN goal_id INTEGER');
+      }
+    }
+    if (oldVersion < 18) {
+      final goalColumns = await db.rawQuery('PRAGMA table_info(goals)');
+      if (!goalColumns.any((column) => column['name'] == 'planning_mode')) {
+        await db.execute(
+          "ALTER TABLE goals ADD COLUMN planning_mode TEXT NOT NULL DEFAULT 'deadline'",
+        );
+      }
+      await db.execute(
+        "UPDATE goals SET planning_mode = 'amount' WHERE deadline IS NULL AND contribution_amount IS NOT NULL",
+      );
+    }
+    if (oldVersion < 19) {
+      final transactionColumns = await db.rawQuery(
+        'PRAGMA table_info(transactions)',
+      );
+      if (!transactionColumns.any(
+        (column) => column['name'] == 'goal_assignment_source',
+      )) {
+        await db.execute(
+          'ALTER TABLE transactions ADD COLUMN goal_assignment_source TEXT',
+        );
+      }
+      await db.execute('''
+        UPDATE transactions
+        SET goal_assignment_source = 'legacy'
+        WHERE goal_id IS NOT NULL AND goal_assignment_source IS NULL
+      ''');
+    }
     if (oldVersion < 16) {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS app_preferences (
@@ -651,7 +692,65 @@ created_at TEXT NOT NULL
         await db.execute('ALTER TABLE shopping_items ADD COLUMN volume TEXT');
       } catch (_) {}
     }
+    if (oldVersion < 17) {
+      // Keep budget_plans intact as a backup, while surfacing every saved plan
+      // in the unified goals list. IDs remain available through legacy_plan_id.
+      await db.execute('''
+        INSERT OR IGNORE INTO goals (
+          id, name, kind, limit_amount, start_date, end_date, schedule_type,
+          legacy_plan_id, budget_status, created_at
+        )
+        SELECT id, name, 'spending_budget', COALESCE(limit_amount, 0),
+               start_date, end_date, COALESCE(plan_type, 'monthly'), id,
+               COALESCE(status, 'ACTIVE'),
+               datetime('now')
+        FROM budget_plans
+      ''');
+    }
     AppLogger.i('Database upgraded from $oldVersion to $newVersion');
+  }
+
+  Future<void> _createUnifiedGoalsTables(cipher.Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS goals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'product',
+        planning_mode TEXT NOT NULL DEFAULT 'deadline',
+        target_amount REAL,
+        deadline TEXT,
+        photo_path TEXT,
+        account_name TEXT,
+        schedule_type TEXT NOT NULL DEFAULT 'weekly',
+        saving_days TEXT,
+        contributions_per_week INTEGER NOT NULL DEFAULT 3,
+        contribution_amount REAL,
+        limit_amount REAL NOT NULL DEFAULT 0,
+        start_date TEXT,
+        end_date TEXT,
+        budget_status TEXT NOT NULL DEFAULT 'ACTIVE',
+        legacy_plan_id INTEGER UNIQUE,
+        legacy_goal_id INTEGER UNIQUE,
+        market_price REAL,
+        tracking_url TEXT,
+        last_checked TEXT,
+        market_status TEXT,
+        currency TEXT,
+        rationale TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS goal_contributions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        goal_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        date TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   Future<void> _repairShoppingItemsRequiredColumn(cipher.Database db) async {

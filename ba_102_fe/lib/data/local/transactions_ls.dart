@@ -1,5 +1,6 @@
 import 'package:sqflite_sqlcipher/sqflite.dart' hide Transaction;
 import 'package:ba_102_fe/data/models/models.dart';
+import 'package:ba_102_fe/data/local/goals_ls.dart';
 import 'package:ba_102_fe/utils/app_logger.dart';
 
 class TransactionsLs {
@@ -28,6 +29,12 @@ class TransactionsLs {
         transaction.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+
+      if (transaction.date != null) {
+        await GoalsLs(
+          db,
+        ).reconcileTransactionAssignments(affectedDates: [transaction.date!]);
+      }
 
       return id;
     } catch (e) {
@@ -120,12 +127,30 @@ class TransactionsLs {
   }
 
   Future<int> updateTransaction(Transaction transaction) async {
-    return await db.update(
+    final oldRows = await db.query(
+      'transactions',
+      columns: ['date'],
+      where: 'id = ?',
+      whereArgs: [transaction.id],
+      limit: 1,
+    );
+    final updated = await db.update(
       'transactions',
       transaction.toMap(),
       where: 'id = ?',
       whereArgs: [transaction.id],
     );
+    final affectedDates = <DateTime>[
+      if (oldRows.isNotEmpty && oldRows.first['date'] != null)
+        DateTime.parse(oldRows.first['date'] as String),
+      if (transaction.date != null) transaction.date!,
+    ];
+    if (affectedDates.isNotEmpty) {
+      await GoalsLs(
+        db,
+      ).reconcileTransactionAssignments(affectedDates: affectedDates);
+    }
+    return updated;
   }
 
   Future<double> getTtlSpendPerPlan(int planId) async {
@@ -142,7 +167,24 @@ class TransactionsLs {
   }
 
   Future<int> deleteTransaction(int id) async {
-    return await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+    final rows = await db.query(
+      'transactions',
+      columns: ['date'],
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    final deleted = await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (rows.isNotEmpty && rows.first['date'] != null) {
+      await GoalsLs(db).reconcileTransactionAssignments(
+        affectedDates: [DateTime.parse(rows.first['date'] as String)],
+      );
+    }
+    return deleted;
   }
 
   Future<double> getTtlIncomePerPlan(int planId) async {
