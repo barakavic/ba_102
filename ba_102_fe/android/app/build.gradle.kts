@@ -5,6 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.0")
+}
+
 android {
     namespace = "com.example.ba_102_fe"
     compileSdk = flutter.compileSdkVersion

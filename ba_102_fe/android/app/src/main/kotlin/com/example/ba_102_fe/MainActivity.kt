@@ -1,10 +1,10 @@
 package com.example.ba_102_fe
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.provider.Telephony
-class MainActivity : FlutterActivity(){
+class MainActivity : FlutterFragmentActivity(){
     private val CHANNEL = "com.example.ba_102_fe/sms"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine){
