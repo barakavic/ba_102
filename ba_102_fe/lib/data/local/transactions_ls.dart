@@ -50,6 +50,11 @@ class TransactionsLs {
     return List.generate(maps.length, (i) => Transaction.fromMap(maps[i]));
   }
 
+  Future<List<Transaction>> getAllTransactions() async {
+    final rows = await db.query('transactions', orderBy: 'date DESC');
+    return rows.map(Transaction.fromMap).toList();
+  }
+
   Future<List<Transaction>> getTransactionsByMonth(DateTime month) async {
     final start = DateTime(month.year, month.month, 1);
     final end = DateTime(month.year, month.month + 1, 1);

@@ -25,6 +25,16 @@ class _TransactionDetailsViewState
   String _selectedType = 'All';
   String _sortBy = 'Newest';
   bool _isFetchingHistory = false;
+  bool _isSearching = false;
+  int? _searchYear;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +44,9 @@ class _TransactionDetailsViewState
     final monthTransactionsAsync = selectedMonth == null
         ? null
         : ref.watch(transactionsForMonthProvider(selectedMonth));
+    final transactionsAsync = _isSearching
+        ? ref.watch(allTransactionsProvider)
+        : monthTransactionsAsync;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,15 +58,44 @@ class _TransactionDetailsViewState
             crossAxisAlignment: WrapCrossAlignment.center,
             runSpacing: 8,
             children: [
-              const Text(
-                'Transaction details',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
+              _isSearching
+                  ? SizedBox(
+                      width: 190,
+                      child: TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search transactions',
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          isDense: true,
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    )
+                  : const Text(
+                      'Transaction details',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
               Row(
                 children: [
+                  IconButton(
+                    tooltip: _isSearching
+                        ? 'Close search'
+                        : 'Search transactions',
+                    onPressed: _isSearching ? _closeSearch : _openSearch,
+                    icon: Icon(_isSearching ? Icons.close : Icons.search),
+                  ),
                   _buildSortMenu(),
                   const SizedBox(width: 8),
-                  _buildMonthCapsule(selectedMonth, earliestMonthAsync),
+                  if (_isSearching)
+                    _buildSearchYearSelector(earliestMonthAsync)
+                  else
+                    _buildMonthCapsule(selectedMonth, earliestMonthAsync),
                 ],
               ),
             ],
@@ -115,17 +157,51 @@ class _TransactionDetailsViewState
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {
+              if (_isSearching) {
+                ref.invalidate(allTransactionsProvider);
+                await ref.read(allTransactionsProvider.future);
+                return;
+              }
               if (selectedMonth == null) return;
               ref.invalidate(transactionsForMonthProvider(selectedMonth));
               await ref.read(
                 transactionsForMonthProvider(selectedMonth).future,
               );
             },
-            child: selectedMonth == null || monthTransactionsAsync == null
+            child: transactionsAsync == null
                 ? const Center(child: CircularProgressIndicator())
-                : monthTransactionsAsync.when(
+                : _isFetchingHistory
+                ? const Center(child: CircularProgressIndicator())
+                : transactionsAsync.when(
                     data: (transactions) {
                       var filtered = transactions;
+                      final categories =
+                          ref.read(categoriesProvider).valueOrNull ??
+                          const <Category>[];
+                      final categoryNames = {
+                        for (final category in categories)
+                          category.id: category.name.toLowerCase(),
+                      };
+
+                      if (_isSearching && _searchYear != null) {
+                        filtered = filtered.where((tx) {
+                          return tx.date?.year == _searchYear;
+                        }).toList();
+                      }
+
+                      final query = _searchQuery.trim().toLowerCase();
+                      if (query.isNotEmpty) {
+                        filtered = filtered.where((tx) {
+                          final searchable = [
+                            tx.description,
+                            tx.vendor,
+                            tx.mpesaReference,
+                            tx.rawSmsMessage,
+                            categoryNames[tx.categoryId],
+                          ].whereType<String>().join(' ').toLowerCase();
+                          return searchable.contains(query);
+                        }).toList();
+                      }
 
                       // 2. Filter by Type (In/Out)
                       filtered = filtered.where((tx) {
@@ -173,6 +249,7 @@ class _TransactionDetailsViewState
                         return ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           children: [
+                            if (_isSearching) _buildSearchTotal(0, 0),
                             SizedBox(
                               height: MediaQuery.of(context).size.height * 0.2,
                             ),
@@ -187,7 +264,7 @@ class _TransactionDetailsViewState
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'No transactions found for these filters in ${_getMonthLabel(selectedMonth)}',
+                                    _getNoResultsLabel(selectedMonth),
                                     style: const TextStyle(
                                       color: Colors.grey,
                                       fontSize: 16,
@@ -201,6 +278,13 @@ class _TransactionDetailsViewState
                         );
                       }
 
+                      final totalSpending = filtered
+                          .where(
+                            (tx) =>
+                                tx.type == 'outbound' ||
+                                tx.type == 'withdrawal',
+                          )
+                          .fold<double>(0, (sum, tx) => sum + (tx.amount ?? 0));
                       final grouped = _groupTransactions(filtered);
 
                       return ListView.builder(
@@ -209,8 +293,15 @@ class _TransactionDetailsViewState
                           horizontal: 8,
                           vertical: 8,
                         ),
-                        itemCount: grouped.length,
+                        itemCount: grouped.length + (_isSearching ? 1 : 0),
                         itemBuilder: (context, index) {
+                          if (_isSearching && index == 0) {
+                            return _buildSearchTotal(
+                              totalSpending,
+                              filtered.length,
+                            );
+                          }
+                          if (_isSearching) index--;
                           final item = grouped[index];
                           if (item is String) {
                             return _buildHeader(item);
@@ -229,6 +320,121 @@ class _TransactionDetailsViewState
           ),
         ),
       ],
+    );
+  }
+
+  void _closeSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchQuery = '';
+      _searchYear = null;
+      _searchController.clear();
+    });
+  }
+
+  Future<void> _openSearch() async {
+    setState(() {
+      _isSearching = true;
+      _searchYear = null;
+    });
+    await _loadSearchYear(null);
+  }
+
+  Future<void> _loadSearchYear(int? year) async {
+    if (_isFetchingHistory) return;
+    setState(() => _isFetchingHistory = true);
+    try {
+      final earliestDate = await ref.read(earliestSmsDateProvider.future);
+      final now = DateTime.now();
+      final since = year == null ? earliestDate : DateTime(year, 1, 1);
+      if (since == null) {
+        throw StateError('No matching M-Pesa SMS history is available.');
+      }
+      final importedCount = await ref
+          .read(smsProvider.notifier)
+          .syncHistoricalMessages(since: since, until: now);
+      ref.invalidate(allTransactionsProvider);
+      await ref.read(allTransactionsProvider.future);
+      if (mounted) setState(() => _searchYear = year);
+      if (importedCount > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Imported $importedCount transactions from SMS.'),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) _showSmsHistoryError(error);
+    } finally {
+      if (mounted) setState(() => _isFetchingHistory = false);
+    }
+  }
+
+  Widget _buildSearchYearSelector(AsyncValue<DateTime?> earliestMonthAsync) {
+    final now = DateTime.now();
+    final earliestYear = earliestMonthAsync.valueOrNull?.year ?? now.year;
+    final years = List.generate(
+      now.year - earliestYear + 1,
+      (index) => now.year - index,
+    );
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(24),
+        color: colorScheme.surface,
+      ),
+      child: DropdownButton<int?>(
+        value: _searchYear,
+        underline: const SizedBox.shrink(),
+        isDense: true,
+        hint: const Text('All years'),
+        items: [
+          const DropdownMenuItem<int?>(value: null, child: Text('All years')),
+          ...years.map(
+            (year) => DropdownMenuItem<int?>(
+              value: year,
+              child: Text(year.toString()),
+            ),
+          ),
+        ],
+        onChanged: _isFetchingHistory ? null : _loadSearchYear,
+      ),
+    );
+  }
+
+  Widget _buildSearchTotal(double total, int count) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Matching transactions'),
+              Text(
+                '$count found',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          Text(
+            'KES ${NumberFormat('#,##0.##').format(total)}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -356,6 +562,14 @@ class _TransactionDetailsViewState
     if (date.year == lastMonth.year && date.month == lastMonth.month)
       return 'Last Month';
     return DateFormat('MMM yyyy').format(date);
+  }
+
+  String _getNoResultsLabel(DateTime? selectedMonth) {
+    if (_isSearching) {
+      final period = _searchYear?.toString() ?? 'all years';
+      return 'No transactions found for $period';
+    }
+    return 'No transactions found for these filters in ${selectedMonth == null ? '' : _getMonthLabel(selectedMonth)}';
   }
 
   Widget _buildSortMenu() {

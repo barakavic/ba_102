@@ -25,13 +25,18 @@ Future<void> _saveSelectedMonth(Database db, DateTime month) async {
   }, conflictAlgorithm: ConflictAlgorithm.replace);
 }
 
-final earliestSmsMonthProvider = FutureProvider<DateTime?>((ref) async {
+final earliestSmsDateProvider = FutureProvider<DateTime?>((ref) async {
   final smsListener = SmsListenerService(onMessageReceived: (_) {});
-  final earliestDate = await smsListener.getEarliestMpesaMessageDate();
-  if (earliestDate == null || earliestDate.isAfter(DateTime.now())) {
+  final date = await smsListener.getEarliestMpesaMessageDate();
+  if (date == null || date.isAfter(DateTime.now())) {
     return null;
   }
-  return _monthStart(earliestDate);
+  return date;
+});
+
+final earliestSmsMonthProvider = FutureProvider<DateTime?>((ref) async {
+  final date = await ref.watch(earliestSmsDateProvider.future);
+  return date == null ? null : _monthStart(date);
 });
 
 final selectedTransactionMonthProvider =
@@ -101,3 +106,8 @@ final transactionsForMonthProvider =
       final db = await DatabaseHelper.instance.database;
       return TransactionsLs(db).getTransactionsByMonth(month);
     });
+
+final allTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  final db = await DatabaseHelper.instance.database;
+  return TransactionsLs(db).getAllTransactions();
+});

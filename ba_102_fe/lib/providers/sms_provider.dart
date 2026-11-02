@@ -90,7 +90,8 @@ class SmsNotifier extends StateNotifier<SmsState> {
       await _saveToDatabase(mpesaTransaction, isSimulated: isSimulated);
 
       ref.invalidate(txProv);
-      ref.invalidate(earliestSmsMonthProvider);
+      ref.invalidate(earliestSmsDateProvider);
+      ref.invalidate(allTransactionsProvider);
       ref.invalidate(transactionsForMonthProvider);
       ref.invalidate(mpesaBalanceProvider);
       ref.invalidate(mpesaBalanceHistoryProvider);
@@ -273,6 +274,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
 
       if (newCount > 0) {
         ref.invalidate(txProv);
+        ref.invalidate(allTransactionsProvider);
         ref.invalidate(transactionsForMonthProvider);
         ref.invalidate(mpesaBalanceProvider);
         ref.invalidate(mpesaBalanceHistoryProvider);
@@ -345,6 +347,7 @@ class SmsNotifier extends StateNotifier<SmsState> {
 
       if (newCount > 0) {
         ref.invalidate(txProv);
+        ref.invalidate(allTransactionsProvider);
         ref.invalidate(transactionsForMonthProvider);
         ref.invalidate(mpesaBalanceProvider);
         ref.invalidate(mpesaBalanceHistoryProvider);
