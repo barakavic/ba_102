@@ -350,11 +350,59 @@ class _ShoppingListDetailsPageState
 
   Future<void> _handleRefresh() async {
     final listId = widget.list.id;
-    if (listId != null) {
-      _hasInitializedFromDb = false;
-      ref.invalidate(shoppingListItemsProvider(listId));
-      await ref.read(shoppingListItemsProvider(listId).future);
+    if (listId == null) return;
+
+    if (_hasUnsavedChanges) {
+      final action = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Unsaved Changes',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text(
+            'You have unsaved changes in this list. Refreshing from the database will discard your edits unless you save them first.',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              onPressed: () => Navigator.pop(ctx, 'discard'),
+              child: const Text('Discard'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: _listColor,
+              ),
+              onPressed: () => Navigator.pop(ctx, 'save'),
+              child: const Text('Save & Sync'),
+            ),
+          ],
+        ),
+      );
+
+      if (action == null || action == 'cancel') {
+        return;
+      }
+
+      if (action == 'save') {
+        await _saveChanges();
+        if (_hasUnsavedChanges) {
+          // If save failed (error caught in _saveChanges), abort refresh
+          return;
+        }
+      }
     }
+
+    _hasInitializedFromDb = false;
+    ref.invalidate(shoppingListItemsProvider(listId));
+    await ref.read(shoppingListItemsProvider(listId).future);
   }
 
   @override
@@ -429,6 +477,9 @@ class _ShoppingListDetailsPageState
               Expanded(
                 child: RefreshIndicator(
                   color: _listColor,
+                  notificationPredicate: (notification) =>
+                      !_isEditMode &&
+                      defaultScrollNotificationPredicate(notification),
                   onRefresh: _handleRefresh,
                   child: visibleCategories.isEmpty
                       ? SingleChildScrollView(
