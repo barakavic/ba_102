@@ -28,7 +28,19 @@ class ShoppingListCard extends StatelessWidget {
     if (list.colorSwatch != null) {
       return Color(list.colorSwatch!);
     }
-    return const Color(0xFF4B0082);
+    return const Color(0xFF673AB7);
+  }
+
+  Color _getEffectiveColor(BuildContext context) {
+    final base = _listColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark && ThemeData.estimateBrightnessForColor(base) == Brightness.dark) {
+      final hsl = HSLColor.fromColor(base);
+      if (hsl.lightness < 0.55) {
+        return hsl.withLightness(0.68).toColor();
+      }
+    }
+    return base;
   }
 
   double get _progress => totalItems == 0 ? 0.0 : (boughtItems / totalItems).clamp(0.0, 1.0);
@@ -38,6 +50,7 @@ class ShoppingListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final displayColor = _getEffectiveColor(context);
 
     return GestureDetector(
       onTap: onTap,
@@ -47,11 +60,11 @@ class ShoppingListCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? _listColor.withValues(alpha: 0.12)
+              ? displayColor.withValues(alpha: 0.12)
               : theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? _listColor : Colors.transparent,
+            color: isSelected ? displayColor : Colors.transparent,
             width: 2,
           ),
           boxShadow: [
@@ -73,12 +86,12 @@ class ShoppingListCard extends StatelessWidget {
                 child: totalItems == 0
                     ? Container(
                         decoration: BoxDecoration(
-                          color: _listColor.withValues(alpha: 0.1),
+                          color: displayColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.shopping_bag_outlined,
-                          color: _listColor.withValues(alpha: 0.7),
+                          color: displayColor.withValues(alpha: 0.7),
                           size: 22,
                         ),
                       )
@@ -88,14 +101,14 @@ class ShoppingListCard extends StatelessWidget {
                           CircularProgressIndicator(
                             value: _progress,
                             strokeWidth: 4,
-                            backgroundColor: _listColor.withValues(alpha: 0.15),
-                            valueColor: AlwaysStoppedAnimation<Color>(_listColor),
+                            backgroundColor: displayColor.withValues(alpha: 0.15),
+                            valueColor: AlwaysStoppedAnimation<Color>(displayColor),
                           ),
                           if (_isComplete)
                             Icon(
                               Icons.check_rounded,
                               size: 20,
-                              color: _listColor,
+                              color: displayColor,
                             )
                           else
                             Text(
@@ -103,7 +116,7 @@ class ShoppingListCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: _listColor,
+                                color: displayColor,
                               ),
                             ),
                         ],
@@ -148,7 +161,7 @@ class ShoppingListCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: _listColor,
+                        color: displayColor,
                       ),
                     ),
                     if (list.budgetLimit != null && list.budgetLimit! > 0)
@@ -176,7 +189,7 @@ class ShoppingListCard extends StatelessWidget {
                     ? Checkbox(
                         key: const ValueKey('checkbox'),
                         value: isSelected,
-                        activeColor: _listColor,
+                        activeColor: displayColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4),
                         ),

@@ -9,18 +9,18 @@ class CreateListDialog extends StatefulWidget {
 
 class _CreateListDialogState extends State<CreateListDialog> {
   final _titleController = TextEditingController();
-  Color _selectedColor = const Color(0xFF4B0082);
+  Color _selectedColor = const Color(0xFF673AB7);
   bool _isLoading = false;
 
   static const List<Color> _swatches = [
-    Color(0xFF4B0082),
-    Color(0xFF1565C0),
-    Color(0xFF00796B),
-    Color(0xFFC62828),
-    Color(0xFF6A1B9A),
-    Color(0xFFE65100),
-    Color(0xFF2E7D32),
-    Color(0xFF37474F),
+    Color(0xFF673AB7), // Deep Purple
+    Color(0xFF1565C0), // Blue
+    Color(0xFF00796B), // Teal
+    Color(0xFFC62828), // Red
+    Color(0xFF9C27B0), // Purple
+    Color(0xFFE65100), // Orange
+    Color(0xFF2E7D32), // Green
+    Color(0xFF37474F), // Blue Grey
   ];
 
   @override
@@ -35,7 +35,8 @@ class _CreateListDialogState extends State<CreateListDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('New Shopping List', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('New Shopping List',
+          style: TextStyle(fontWeight: FontWeight.bold)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,14 +54,15 @@ class _CreateListDialogState extends State<CreateListDialog> {
           const SizedBox(height: 8),
           Wrap(
             spacing: 10,
+            runSpacing: 10,
             children: _swatches.map((color) {
-              final isSelected = color.value == _selectedColor.value;
+              final isSelected = color == _selectedColor;
               return GestureDetector(
                 onTap: () => setState(() => _selectedColor = color),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  width: 30,
-                  height: 30,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
@@ -69,9 +71,18 @@ class _CreateListDialogState extends State<CreateListDialog> {
                       width: 2.5,
                     ),
                     boxShadow: isSelected
-                        ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 6)]
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.5),
+                              blurRadius: 6,
+                            )
+                          ]
                         : [],
                   ),
+                  child: isSelected
+                      ? const Icon(Icons.check_rounded,
+                          size: 18, color: Colors.white)
+                      : null,
                 ),
               );
             }).toList(),
@@ -91,13 +102,29 @@ class _CreateListDialogState extends State<CreateListDialog> {
                   setState(() => _isLoading = true);
                   Navigator.pop(context, {
                     'title': _titleController.text.trim(),
-                    'color': _selectedColor.value,
+                    'color': _selectedColor.toARGB32(),
                   });
                 },
-          style: FilledButton.styleFrom(backgroundColor: _selectedColor),
+          style: FilledButton.styleFrom(
+            backgroundColor: _selectedColor,
+            foregroundColor: Colors.white,
+          ),
           child: _isLoading
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Create'),
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text(
+                  'Create',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
         ),
       ],
     );

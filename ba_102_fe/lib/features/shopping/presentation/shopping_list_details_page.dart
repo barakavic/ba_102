@@ -83,7 +83,7 @@ class _ShoppingListDetailsPageState
     if (widget.list.colorSwatch != null) {
       return Color(widget.list.colorSwatch!);
     }
-    return const Color(0xFF4B0082);
+    return const Color(0xFF673AB7);
   }
 
   static const List<Color> _categoryColorPalette = [
@@ -437,6 +437,7 @@ class _ShoppingListDetailsPageState
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: _listColor,
+                foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(ctx, 'save'),
               child: const Text('Save & Sync'),
@@ -526,6 +527,7 @@ class _ShoppingListDetailsPageState
                   FilledButton(
                     style: FilledButton.styleFrom(
                       backgroundColor: _listColor,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                     ),
                     onPressed: () => Navigator.pop(ctx, 'save'),
@@ -973,7 +975,7 @@ class _ShoppingListDetailsPageState
                     spacing: 8,
                     runSpacing: 8,
                     children: _categoryColorPalette.map((color) {
-                      final isSelected = color.value == selectedColor.value;
+                      final isSelected = color == selectedColor;
                       return GestureDetector(
                         onTap: () => setDialogState(() => selectedColor = color),
                         child: AnimatedContainer(
@@ -984,10 +986,14 @@ class _ShoppingListDetailsPageState
                             color: color,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isSelected ? Colors.black : Colors.transparent,
+                              color: isSelected ? Colors.white : Colors.transparent,
                               width: 2.5,
                             ),
                           ),
+                          child: isSelected
+                              ? const Icon(Icons.check_rounded,
+                                  size: 16, color: Colors.white)
+                              : null,
                         ),
                       );
                     }).toList(),
@@ -1000,7 +1006,10 @@ class _ShoppingListDetailsPageState
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: selectedColor),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: selectedColor,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () async {
                     final newTitle = titleController.text.trim();
                     if (newTitle.isEmpty) return;
@@ -1023,7 +1032,7 @@ class _ShoppingListDetailsPageState
       final newList = ShoppingListModel(
         id: newListId,
         title: newTitle,
-        colorSwatch: color.value,
+        colorSwatch: color.toARGB32(),
         budgetLimit: widget.list.budgetLimit,
         isTemporary: widget.list.isTemporary,
         createdAt: DateTime.now(),
