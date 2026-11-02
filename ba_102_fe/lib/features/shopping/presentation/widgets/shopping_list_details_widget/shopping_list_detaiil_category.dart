@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:ba_102_fe/features/shopping/presentation/utils/budget_culprit_helper.dart';
+import 'package:ba_102_fe/features/shopping/presentation/widgets/shopping_list_details_widget/volume_weight_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -1015,16 +1016,16 @@ class _CategoryItemRow extends StatelessWidget {
                 iconColor: accentColor,
                 onTap: () {
                   Navigator.pop(ctx);
-                  _showTextInputDialog(
-                    context,
-                    title: 'Volume / Weight',
-                    hint: 'e.g. 500ml, 2kg, 250g...',
-                    icon: Icons.straighten_outlined,
-                    initialValue: item.volume ?? '',
-                    onSet: (val) {
-                      item.volume = val.trim().isEmpty ? null : val.trim();
-                      onItemMetaChanged?.call();
-                    },
+                  showDialog<void>(
+                    context: context,
+                    builder: (dialogCtx) => VolumeWeightPickerDialog(
+                      initialValue: item.volume,
+                      accentColor: accentColor,
+                      onApply: (val) {
+                        item.volume = val;
+                        onItemMetaChanged?.call();
+                      },
+                    ),
                   );
                 },
               ),
