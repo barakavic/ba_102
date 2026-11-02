@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ba_102_fe/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:ba_102_fe/data/models/spending_limit_model.dart';
 import 'package:ba_102_fe/providers/spending_limits_provider.dart';
 
 class SpendingSpeedometer extends ConsumerStatefulWidget {
   const SpendingSpeedometer({super.key});
 
   @override
-  ConsumerState<SpendingSpeedometer> createState() => _SpendingSpeedometerState();
+  ConsumerState<SpendingSpeedometer> createState() =>
+      _SpendingSpeedometerState();
 }
 
-class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with TickerProviderStateMixin {
+class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer>
+    with TickerProviderStateMixin {
   bool _hasShaken = false;
 
   late AnimationController _settleController;
@@ -30,9 +33,10 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _shakeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _shakeController, curve: Curves.linear),
-    );
+    _shakeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _shakeController, curve: Curves.linear));
   }
 
   @override
@@ -61,6 +65,47 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
     }
   }
 
+  Future<void> _setDailyLimit(SpendingLimit? existingLimit) async {
+    final dailyLimit = existingLimit == null
+        ? null
+        : normalizeLimitToDaily(existingLimit);
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (context) =>
+          _DailyLimitDialog(
+            initialAmount: dailyLimit?.amount,
+            appliesEveryDay: dailyLimit?.specificDays == null,
+          ),
+    );
+
+    if (!mounted || amount == null) return;
+
+    final limit = SpendingLimit(
+      id: existingLimit?.id ?? 0,
+      limitType: 'daily',
+      amount: amount,
+      alertPercentage: existingLimit?.alertPercentage ?? 80,
+      specificDays: existingLimit?.limitType.toLowerCase() == 'daily'
+          ? existingLimit?.specificDays
+          : null,
+      createdAt: existingLimit?.createdAt ?? DateTime.now(),
+    );
+
+    try {
+      final notifier = ref.read(spendingLimitsProvider.notifier);
+      if (existingLimit == null) {
+        await notifier.createLimit(limit);
+      } else {
+        await notifier.updateLimit(limit);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save the daily limit.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -69,6 +114,7 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
     final isPrivacyMode = ref.watch(privacyModeProvider);
     final period = ref.watch(dashboardPeriodProvider);
     final statusAsync = ref.watch(limitStatusProvider);
+    final activeLimit = ref.watch(spendingLimitsProvider).valueOrNull;
 
     return statusAsync.when(
       data: (status) {
@@ -145,7 +191,9 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
                                   color: onSurface.withValues(alpha: 0.6),
                                   fontWeight: FontWeight.w500,
                                   decoration: TextDecoration.underline,
-                                  decorationColor: onSurface.withValues(alpha: 0.6),
+                                  decorationColor: onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 2),
@@ -169,16 +217,50 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          limit == null
-                              ? 'No Limit Set'
-                              : 'Limit: KES ${NumberFormat('#,###').format(limit)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: isExceeded ? Colors.red : onSurface.withValues(alpha: 0.5),
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                limit == null
+                                    ? activeLimit == null
+                                          ? 'No Limit Set'
+                                          : 'No Limit Today'
+                                    : 'Limit: KES ${NumberFormat('#,###').format(limit)}',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: isExceeded
+                                      ? Colors.red
+                                      : onSurface.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: IconButton(
+                                tooltip: activeLimit == null
+                                    ? 'Set daily limit'
+                                    : 'Edit daily limit',
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                                iconSize: 16,
+                                style: IconButton.styleFrom(
+                                  shape: const CircleBorder(),
+                                  side: BorderSide(
+                                    color: onSurface.withValues(alpha: 0.25),
+                                  ),
+                                  foregroundColor: colorScheme.primary,
+                                ),
+                                onPressed: () => _setDailyLimit(activeLimit),
+                                icon: const Icon(Icons.add),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -205,6 +287,85 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (e, st) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _DailyLimitDialog extends StatefulWidget {
+  const _DailyLimitDialog({
+    this.initialAmount,
+    required this.appliesEveryDay,
+  });
+
+  final double? initialAmount;
+  final bool appliesEveryDay;
+
+  @override
+  State<_DailyLimitDialog> createState() => _DailyLimitDialogState();
+}
+
+class _DailyLimitDialogState extends State<_DailyLimitDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _amountController;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(
+      text: widget.initialAmount == null
+          ? ''
+          : widget.initialAmount!.toStringAsFixed(2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.of(context).pop(double.parse(_amountController.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.initialAmount == null ? 'Set daily limit' : 'Edit daily limit',
+      ),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _amountController,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          onFieldSubmitted: (_) => _save(),
+          decoration: InputDecoration(
+            labelText: 'Daily limit',
+            prefixText: 'KES ',
+            helperText: widget.appliesEveryDay
+                ? 'Applies every day'
+                : 'Applies on the saved weekdays',
+          ),
+          validator: (value) {
+            final amount = double.tryParse(value?.trim() ?? '');
+            if (amount == null || !amount.isFinite || amount <= 0) {
+              return 'Enter an amount greater than zero';
+            }
+            return null;
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Save')),
+      ],
     );
   }
 }

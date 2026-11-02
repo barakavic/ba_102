@@ -11,52 +11,17 @@ class SpendingBarChart extends ConsumerWidget {
 
   double? _getGraphLimit(SpendingLimit? limit, BarChartPeriod chartPeriod) {
     if (limit == null) return null;
-    final type = limit.limitType.toLowerCase();
-    
     if (chartPeriod == BarChartPeriod.daily) {
-      if (type == 'daily') {
-        return limit.amount;
-      }
-      return null;
-    }
-    
-    if (chartPeriod == BarChartPeriod.weekly) {
-      if (type == 'daily') {
-        final days = limit.specificDays?.length ?? 7;
-        return limit.amount * days;
-      }
-      if (type == 'weekly') {
-        return limit.amount;
-      }
-      return null;
+      return normalizeLimitToDaily(limit).amount;
     }
 
-    if (chartPeriod == BarChartPeriod.monthly) {
-      if (type == 'daily') {
-        final days = limit.specificDays?.length ?? 7;
-        return limit.amount * days * 52 / 12;
-      }
-      if (type == 'weekly') {
-        return limit.amount * 52 / 12;
-      }
-      if (type == 'monthly') {
-        return limit.amount;
-      }
-      return null;
-    }
-    
-    // yearly
-    if (type == 'daily') {
-      final days = limit.specificDays?.length ?? 7;
-      return limit.amount * days * 52;
-    }
-    if (type == 'weekly') {
-      return limit.amount * 52;
-    }
-    if (type == 'monthly') {
-      return limit.amount * 12;
-    }
-    return null;
+    final dashboardPeriod = switch (chartPeriod) {
+      BarChartPeriod.weekly => 'Week',
+      BarChartPeriod.monthly => 'Month',
+      BarChartPeriod.yearly => 'Year',
+      BarChartPeriod.daily => 'Day',
+    };
+    return limitAmountForPeriod(limit, dashboardPeriod);
   }
 
   @override
@@ -65,7 +30,7 @@ class SpendingBarChart extends ConsumerWidget {
     final dataAsync = ref.watch(spendingBarDataProvider);
     final isPrivacyMode = ref.watch(privacyModeProvider);
     final activeLimit = ref.watch(spendingLimitsProvider).valueOrNull;
-    
+
     const primaryColor = Color(0xFF4B0082);
     final colorScheme = Theme.of(context).colorScheme;
     final onSurface = colorScheme.onSurface;
@@ -149,14 +114,14 @@ class SpendingBarChart extends ConsumerWidget {
                       0.0,
                       (previous, value) => value > previous ? value : previous,
                     );
-                
+
                 double maxY = (maxValue <= 0 ? 100 : maxValue * 1.2);
                 if (limitVal != null && limitVal > maxY) {
                   maxY = limitVal * 1.15;
                 }
 
-                final warningThreshold = activeLimit != null 
-                    ? (100 - activeLimit.alertPercentage) / 100 
+                final warningThreshold = activeLimit != null
+                    ? (100 - activeLimit.alertPercentage) / 100
                     : 0.88;
 
                 return BarChart(
@@ -271,7 +236,7 @@ class SpendingBarChart extends ConsumerWidget {
                     ),
                     barGroups: List.generate(data.length, (index) {
                       final pointTotal = data[index].total;
-                      
+
                       Color barColor = primaryColor;
                       if (limitVal != null) {
                         if (pointTotal >= limitVal) {

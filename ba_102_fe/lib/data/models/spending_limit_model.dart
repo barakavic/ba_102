@@ -12,28 +12,28 @@ class SpendingLimit {
     required this.amount,
     required this.alertPercentage,
     this.specificDays,
-    required this.createdAt
+    required this.createdAt,
   });
 
-  Map<String, dynamic> toMap(){
-    return{
+  Map<String, dynamic> toMap() {
+    return {
       'id': id,
-      'title': limitType,
+      'limit_type': limitType,
       'amount': amount,
       'alert_percentage': alertPercentage,
       'specific_days': specificDays?.join(','),
-      'created_at': createdAt.toIso8601String()
+      'created_at': createdAt.toIso8601String(),
     };
   }
 
-  factory SpendingLimit.fromMap(Map<String, dynamic> map){
+  factory SpendingLimit.fromMap(Map<String, dynamic> map) {
     return SpendingLimit(
-      id: map['id'] as int, 
-      limitType: map['limit_type'] as String, 
-      amount: (map['amount'] as num).toDouble(), 
-      alertPercentage: map['alert_percentage'] as int, 
+      id: map['id'] as int,
+      limitType: map['limit_type'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      alertPercentage: map['alert_percentage'] as int,
       specificDays: (map['specific_days'] as String?)?.split(','),
-      createdAt: DateTime.parse(map['created_at'] as String));
+      createdAt: DateTime.parse(map['created_at'] as String),
+    );
   }
-
 }
