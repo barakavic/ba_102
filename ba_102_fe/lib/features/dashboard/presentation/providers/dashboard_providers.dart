@@ -3,7 +3,7 @@ import 'package:ba_102_fe/data/local/database_helper.dart';
 import 'package:ba_102_fe/data/local/transactions_ls.dart';
 import 'package:ba_102_fe/data/models/models.dart';
 
-enum BarChartPeriod { daily, weekly, yearly }
+enum BarChartPeriod { daily, weekly, monthly, yearly }
 
 class SpendingBarBucket {
   final DateTime bucketStart;
@@ -45,7 +45,7 @@ final recentTransactionsProvider = FutureProvider<List<Transaction>>((
 
 final dashboardPeriodProvider = StateProvider<String>(
   (ref) => 'Month',
-); // Week, Month, Year
+); // Day, Week, Month, Year
 final barChartPeriodProvider = StateProvider<BarChartPeriod>(
   (ref) => BarChartPeriod.daily,
 );
@@ -61,7 +61,11 @@ final periodSummaryProvider = FutureProvider<Map<String, double>>((ref) async {
     if (t.date == null) return false;
     final date = t.date!;
 
-    if (period == 'Week') {
+    if (period == 'Day') {
+      return date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+    } else if (period == 'Week') {
       // Find the start of the week (Monday)
       final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
       final startOfNextWeek = startOfWeek.add(const Duration(days: 7));
@@ -179,6 +183,42 @@ final spendingBarDataProvider = FutureProvider<List<SpendingBarBucket>>((
     });
   }
 
+  if (period == BarChartPeriod.monthly) {
+    final firstMonth = DateTime(now.year, now.month - 11, 1);
+    final nextMonth = DateTime(now.year, now.month + 1, 1);
+    final rows = await db.rawQuery(
+      '''
+      SELECT
+        strftime('%Y-%m', substr(date, 1, 10)) AS bucket,
+        SUM(amount) AS total
+      FROM transactions
+      WHERE type IN ('outbound', 'withdrawal')
+        AND date(substr(date, 1, 10)) >= ?
+        AND date(substr(date, 1, 10)) < ?
+      GROUP BY bucket
+      ORDER BY bucket ASC
+      ''',
+      [_toSqlDate(firstMonth), _toSqlDate(nextMonth)],
+    );
+
+    final totalsByMonth = <String, double>{};
+    for (final row in rows) {
+      final bucket = row['bucket'] as String?;
+      if (bucket == null) continue;
+      totalsByMonth[bucket] = (row['total'] as num?)?.toDouble() ?? 0.0;
+    }
+
+    return List.generate(12, (index) {
+      final month = DateTime(now.year, now.month - 11 + index, 1);
+      final key = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+      return SpendingBarBucket(
+        bucketStart: month,
+        label: _monthShort(month.month),
+        total: totalsByMonth[key] ?? 0.0,
+      );
+    });
+  }
+
   final rows = await db.rawQuery('''
     SELECT 
       strftime('%Y', substr(date, 1, 10)) AS bucket,
@@ -282,4 +322,12 @@ String _weekdayShort(int weekday) {
     default:
       return 'Sun';
   }
+}
+
+String _monthShort(int month) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return months[month - 1];
 }

@@ -30,6 +30,20 @@ class SpendingBarChart extends ConsumerWidget {
       }
       return null;
     }
+
+    if (chartPeriod == BarChartPeriod.monthly) {
+      if (type == 'daily') {
+        final days = limit.specificDays?.length ?? 7;
+        return limit.amount * days * 52 / 12;
+      }
+      if (type == 'weekly') {
+        return limit.amount * 52 / 12;
+      }
+      if (type == 'monthly') {
+        return limit.amount;
+      }
+      return null;
+    }
     
     // yearly
     if (type == 'daily') {
@@ -98,6 +112,13 @@ class SpendingBarChart extends ConsumerWidget {
                 isSelected: period == BarChartPeriod.weekly,
                 onTap: () => ref.read(barChartPeriodProvider.notifier).state =
                     BarChartPeriod.weekly,
+              ),
+              const SizedBox(width: 8),
+              _PeriodChip(
+                label: 'Monthly',
+                isSelected: period == BarChartPeriod.monthly,
+                onTap: () => ref.read(barChartPeriodProvider.notifier).state =
+                    BarChartPeriod.monthly,
               ),
               const SizedBox(width: 8),
               _PeriodChip(
@@ -337,6 +358,10 @@ String _tooltipPeriodLabel(BarChartPeriod period, DateTime date) {
   if (period == BarChartPeriod.weekly) {
     final end = date.add(const Duration(days: 6));
     return '${DateFormat('MMM d').format(date)} - ${DateFormat('MMM d').format(end)}';
+  }
+
+  if (period == BarChartPeriod.monthly) {
+    return DateFormat('MMMM yyyy').format(date);
   }
 
   return DateFormat('yyyy').format(date);

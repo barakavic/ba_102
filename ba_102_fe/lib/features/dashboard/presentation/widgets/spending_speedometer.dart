@@ -50,12 +50,14 @@ class _SpendingSpeedometerState extends ConsumerState<SpendingSpeedometer> with 
 
   void _cyclePeriod() {
     final current = ref.read(dashboardPeriodProvider);
-    if (current == 'Week') {
+    if (current == 'Day') {
+      ref.read(dashboardPeriodProvider.notifier).state = 'Week';
+    } else if (current == 'Week') {
       ref.read(dashboardPeriodProvider.notifier).state = 'Month';
     } else if (current == 'Month') {
       ref.read(dashboardPeriodProvider.notifier).state = 'Year';
     } else {
-      ref.read(dashboardPeriodProvider.notifier).state = 'Week';
+      ref.read(dashboardPeriodProvider.notifier).state = 'Day';
     }
   }
 

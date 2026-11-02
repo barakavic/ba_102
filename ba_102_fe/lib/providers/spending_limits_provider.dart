@@ -123,9 +123,12 @@ final limitStatusProvider = FutureProvider<LimitStatus>((ref) async{
   );
 });
 
-double _calculateDailyLimitForPeriod(SpendingLimit limit, String dashboardPeriod) {
+double? _calculateDailyLimitForPeriod(SpendingLimit limit, String dashboardPeriod) {
   final now = DateTime.now();
   final activeDays = limit.specificDays ?? ['1', '2', '3', '4', '5', '6', '7']; // '1'=Mon, '7'=Sun
+  if (dashboardPeriod == 'Day') {
+    return activeDays.contains(now.weekday.toString()) ? limit.amount : null;
+  }
   if (dashboardPeriod == 'Week') {
     int count = 0;
     final monday = now.subtract(Duration(days: now.weekday - 1));
@@ -161,6 +164,9 @@ double _calculateDailyLimitForPeriod(SpendingLimit limit, String dashboardPeriod
   return limit.amount * count;
 }
 double? _calculateWeeklyLimitForPeriod(SpendingLimit limit, String dashboardPeriod) {
+  if (dashboardPeriod == 'Day') {
+    return null;
+  }
   if (dashboardPeriod == 'Week') {
     return limit.amount;
   }
@@ -170,6 +176,9 @@ double? _calculateWeeklyLimitForPeriod(SpendingLimit limit, String dashboardPeri
   return limit.amount * 52;
 }
 double? _calculateMonthlyLimitForPeriod(SpendingLimit limit, String dashboardPeriod) {
+  if (dashboardPeriod == 'Day') {
+    return null;
+  }
   if (dashboardPeriod == 'Week') {
     return null;
   }
