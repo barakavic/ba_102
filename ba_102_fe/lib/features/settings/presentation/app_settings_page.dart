@@ -78,7 +78,7 @@ class AppSettingsPage extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.info_outline, color: primaryColor),
             title: const Text('Version'),
-            subtitle: const Text('1.10.0+12 "Shopping & Budget Intelligence"'),
+            subtitle: const Text('1.11.0+13 "Goals, Savings & Security"'),
           ),
           ListTile(
             leading: Icon(

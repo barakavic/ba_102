@@ -8,7 +8,6 @@ import 'package:ba_102_fe/dashboard_page.dart';
 import 'package:ba_102_fe/features/settings/presentation/app_settings_page.dart';
 import 'package:ba_102_fe/features/hub/features_hub_page.dart';
 
-
 import 'package:ba_102_fe/services/contact_service.dart';
 
 final navIndexProvider = StateProvider<int>((ref) => 0);
@@ -22,7 +21,7 @@ class MainNavigation extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
     final titles = ['Total Budget', 'Transactions', 'Features Hub'];
-    
+
     // Initialize contacts mapping when the app starts
     ref.watch(contactServiceProvider);
 
@@ -49,7 +48,10 @@ class MainNavigation extends ConsumerWidget {
           if (currentIndex == 0)
             IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.notifications_none_outlined, color: Colors.black),
+              icon: const Icon(
+                Icons.notifications_none_outlined,
+                color: Colors.black,
+              ),
             ),
           if (currentIndex == 1) ...[
             Padding(
@@ -58,13 +60,18 @@ class MainNavigation extends ConsumerWidget {
                 children: [
                   Icon(
                     smsState.isListening ? Icons.sms : Icons.sms_failed,
-                    color: smsState.isListening ? Colors.green.shade400 : Colors.grey,
+                    color: smsState.isListening
+                        ? Colors.green.shade400
+                        : Colors.grey,
                     size: 20,
                   ),
                   if (smsState.transactionCount > 0)
                     Container(
                       margin: const EdgeInsets.only(left: 4.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(10),
@@ -81,7 +88,7 @@ class MainNavigation extends ConsumerWidget {
                 ],
               ),
             ),
-            ],
+          ],
         ],
       ),
       drawer: SizedBox(
@@ -91,7 +98,9 @@ class MainNavigation extends ConsumerWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
             child: Container(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.7),
               child: Column(
                 children: [
                   DrawerHeader(
@@ -100,11 +109,19 @@ class MainNavigation extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.account_balance_wallet, size: 48, color: Theme.of(context).colorScheme.primary),
+                          Icon(
+                            Icons.account_balance_wallet,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           const SizedBox(height: 10),
                           Text(
                             "Command Center",
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -117,7 +134,9 @@ class MainNavigation extends ConsumerWidget {
                       Navigator.pop(context); // Close drawer
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AppSettingsPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const AppSettingsPage(),
+                        ),
                       );
                     },
                   ),
@@ -130,7 +149,9 @@ class MainNavigation extends ConsumerWidget {
                   ),
                   SwitchListTile(
                     secondary: Icon(
-                      ref.watch(privacyModeProvider) ? Icons.visibility_off : Icons.visibility,
+                      ref.watch(privacyModeProvider)
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     title: const Text("Privacy Mode"),
@@ -143,7 +164,14 @@ class MainNavigation extends ConsumerWidget {
                   const Spacer(),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text("v1.10.0 - Financial OS", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4))),
+                    child: Text(
+                      "v1.11.0 - Financial OS",
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -159,22 +187,30 @@ class MainNavigation extends ConsumerWidget {
             IconButton(
               icon: Icon(
                 currentIndex == 0 ? Icons.home : Icons.home_outlined,
-                color: currentIndex == 0 ? Theme.of(context).colorScheme.primary : Colors.grey,
+                color: currentIndex == 0
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 0,
             ),
             IconButton(
               icon: Icon(
-                currentIndex == 1 ? Icons.swap_horiz : Icons.swap_horiz_outlined,
-                color: currentIndex == 1 ? Theme.of(context).colorScheme.primary : Colors.grey,
-                size: 32, 
+                currentIndex == 1
+                    ? Icons.swap_horiz
+                    : Icons.swap_horiz_outlined,
+                color: currentIndex == 1
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey,
+                size: 32,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 1,
             ),
             IconButton(
               icon: Icon(
                 currentIndex == 2 ? Icons.grid_view : Icons.grid_view_rounded,
-                color: currentIndex == 2 ? Theme.of(context).colorScheme.primary : Colors.grey,
+                color: currentIndex == 2
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey,
               ),
               onPressed: () => ref.read(navIndexProvider.notifier).state = 2,
             ),

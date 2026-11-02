@@ -10,9 +10,7 @@ class SettingsPage extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           Padding(
@@ -20,9 +18,9 @@ class SettingsPage extends ConsumerWidget {
             child: Text(
               "Appearance",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           SwitchListTile(
@@ -34,12 +32,20 @@ class SettingsPage extends ConsumerWidget {
             ),
             value: themeMode == ThemeMode.dark,
             onChanged: (bool value) {
-              ref.read(themeProvider.notifier).state =
-                  value ? ThemeMode.dark : ThemeMode.light;
+              ref.read(themeProvider.notifier).state = value
+                  ? ThemeMode.dark
+                  : ThemeMode.light;
             },
           ),
           const Divider(),
-          // Add more settings here later
+          ListTile(
+            leading: Icon(
+              Icons.info_outline,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: const Text('Version'),
+            subtitle: const Text('1.11.0+13 "Goals, Savings & Security"'),
+          ),
         ],
       ),
     );

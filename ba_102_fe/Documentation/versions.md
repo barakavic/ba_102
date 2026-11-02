@@ -193,3 +193,18 @@
     - Unsaved changes confirmation dialog on page exit and pull-to-refresh edit-mode protection.
     - Enhanced list cards with checklist completion progress rings, checkmarks (✓), and formatted cost badges.
     - High-contrast purple palette and WCAG-compliant dark theme adaptations.
+
+## version 1.11.0+13
+- **Frontend**: Flutter - Version 1.11.0+13
+- **Goals & Savings**:
+  - Unified savings goals, funds, and spending budgets in the local Goals area.
+  - Added manual and SMS-linked contributions, scheduled saving commitments, and a duration-based contribution graph.
+  - Added a latest-goal contribution graph to the dashboard.
+- **Transactions & Analytics**:
+  - Added historical month selection with SMS history import and transaction search across years.
+  - Added monthly spending analytics and a daily spending period.
+- **Security**:
+  - Encrypted the local SQLite database with SQLCipher and added an About confirmation status.
+  - Added an optional biometric app lock with a four-digit app PIN backup.
+- **Product goals**:
+  - Added an explicit web-search action for product goals.
